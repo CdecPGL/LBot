@@ -9,6 +9,5 @@ def generate_help():
 def generate_random_word():
     return random.choice(word_list)
 
-def generate_random_reply():
-    return "よく分からないけど、" + generate_random_word()
-    
+def generate_random_reply(text):
+    return text + "はよく分からないけど、" + generate_random_word() + "。"
