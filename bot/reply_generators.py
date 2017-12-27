@@ -11,3 +11,4 @@ def generate_random_word():
 
 def generate_random_reply():
     return "よく分からないけど、" + generate_random_word()
+    
