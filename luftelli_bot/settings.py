@@ -25,7 +25,7 @@ SECRET_KEY = 'w@m^wot=o_qnxr)!5_v7omzmn!@e6pt%ukbd0=7*acddvx&%m@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["luftelli-bot"] #デプロイ後のアクセス時の"Invalid HTTP_HOST header" 対策でherokuのアプリ名を追加
+ALLOWED_HOSTS = ["luftelli-bot.herokuapp.com"] #デプロイ後のアクセス時の"Invalid HTTP_HOST header" 対策でherokuのアプリURLを追加
 
 
 # Application definition
