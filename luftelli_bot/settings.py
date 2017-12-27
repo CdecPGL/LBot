@@ -25,7 +25,7 @@ SECRET_KEY = 'w@m^wot=o_qnxr)!5_v7omzmn!@e6pt%ukbd0=7*acddvx&%m@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["luftelli-bot"] #デプロイ後のアクセス時の"Invalid HTTP_HOST header" 対策でherokuのアプリ名を追加
 
 
 # Application definition
@@ -118,3 +118,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+# デプロイ時の"Error while running '$ python manage.py collectstatic --noinput'." 対策
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = (
+    os.path.join(PROJECT_ROOT, 'static'),
+)
