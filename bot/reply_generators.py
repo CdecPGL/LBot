@@ -12,7 +12,7 @@ def generate_help():
 def generate_random_word():
     '''ランダムな単語を生成する'''
     if Vocabulary.objects.count():
-        return Vocabulary.objects.order_by('?').values_list("word")[0]
+        return Vocabulary.objects.order_by('?')[0].word
     else:
         return "何にも分からない……"
 
@@ -20,11 +20,10 @@ def generate_random_word():
 def generate_random_reply(text):
     '''返信を生成する'''
     # 投げかけられた言葉を検索
-    hit = Vocabulary.objects.filter(word__exact=text)
-    if hit:        
+    try:
+        Vocabulary.objects.get(word__iexact=text)
         return text + "は知ってるけど、" + generate_random_word() + "じゃない？"
-    else:
+    except Vocabulary.DoesNotExist:
         # 新しい言葉は登録
         Vocabulary(word=text).save()
         return text + "はよく分からないけど、" + generate_random_word() + "だよね。"
-    
