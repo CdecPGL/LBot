@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+import dj_database_url
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +26,8 @@ SECRET_KEY = 'w@m^wot=o_qnxr)!5_v7omzmn!@e6pt%ukbd0=7*acddvx&%m@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["luftelli-bot.herokuapp.com"] #デプロイ後のアクセス時の"Invalid HTTP_HOST header" 対策でherokuのアプリURLを追加
+#デプロイ後のアクセス時の"Invalid HTTP_HOST header" 対策でherokuのアプリURLを追加
+ALLOWED_HOSTS = ["luftelli-bot.herokuapp.com"]
 
 
 # Application definition
@@ -80,6 +82,10 @@ DATABASES = {
     }
 }
 
+# Parse database configuration from $DATABASE_URL
+db_from_env = dj_database_url.config()
+DATABASES['default'].update(db_from_env)
+
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
@@ -103,9 +109,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ja'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Tokyo'
 
 USE_I18N = True
 
