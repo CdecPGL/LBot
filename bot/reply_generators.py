@@ -2,7 +2,7 @@ import random
 from bot.models import Vocabulary
 
 KNOW_BUT_LIST=["は知ってるけど、", "は当たり前だね。でも","は最近はやってるよ。だけど","は常識だよ。ところで","はすごいよね。By the way, "]
-UNKNOW_BUT_LIST=["はよく分からないけど、", "はどうでもいいから、","は忘れた。話は変わって","は消えたよ。ということで","っておいしいの？　Then, "]
+UNKNOW_BUT_LIST=["はよく分からないけど、", "はどうでもいいから、","は忘れた。話は変わって","は消えたよ。ということで","っておいしいの？","Then, "]
 RANDOM_REPLY_SUFIX_LIST=["じゃない？", "だよね。","なんだって！","、はあ。","らしいよ。知らんけど","はクソ。",", is it right?","喧嘩売ってんの？"]
 
 def generate_help():
