@@ -43,7 +43,7 @@ def help_command():
 
 def test_command(*params):
     '''テストコマンド'''
-    return "コマンド引数/n" "/n".join(["{}: {}".format(idx + 1, param) for idx, param in enumerate(params)])
+    return "コマンド引数\n" + "\n".join(["{}: {}".format(idx + 1, param) for idx, param in enumerate(params)])
 
 
 COMMAND_MAP = {
