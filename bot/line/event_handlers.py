@@ -1,50 +1,13 @@
-import random
 import sys
 
 import linebot
 
 import bot.line.line_settings as line_settings
-from bot.models import Vocabulary
+import bot.message_commands as mess_cmd
 
-KNOW_BUT_LIST = ["は知ってるけど、", "は当たり前だね。でも",
-                 "は最近はやってるよ。だけど", "は常識だよ。ところで", "はすごいよね。By the way, "]
-UNKNOW_BUT_LIST = ["はよく分からないけど、", "はどうでもいいから、",
-                   "は忘れた。話は変わって", "は消えたよ。ということで", "っておいしいの？", "? OK. Then "]
-RANDOM_REPLY_SUFIX_LIST = ["じゃない？", "だよね。", "なんだって！",
-                           "、はあ。", "らしいよ。知らんけど", "はクソ。", ", is it right?", "喧嘩売ってんの？"]
-MAX_VOCABLARY_COUNT = 100
 COMMAND_TRIGGER = "ー！"
 
 event_handler = linebot.WebhookHandler(line_settings.CHANNEL_SECRET)
-
-
-def generate_help():
-    return '''使い方(未実装)'''
-
-
-def generate_random_word():
-    '''ランダムな単語を生成する'''
-    if Vocabulary.objects.count():
-        return Vocabulary.objects.order_by('?')[0].word
-    else:
-        return "何にも分からない……"
-
-
-def generate_random_reply(text):
-    '''返信を生成する'''
-    # 投げかけられた言葉を検索
-    try:
-        Vocabulary.objects.get(word__iexact=text)
-        return text + random.choice(KNOW_BUT_LIST) + generate_random_word() + random.choice(RANDOM_REPLY_SUFIX_LIST)
-    except Vocabulary.DoesNotExist:
-        # 新しい言葉は登録
-        reply = generate_random_word()
-        # 語彙数が指定数を超えていたらランダムに一つ削除
-        if Vocabulary.objects.count() > MAX_VOCABLARY_COUNT:
-            Vocabulary.objects.order_by('?')[0].delete()
-        # 新しい単語を登録
-        Vocabulary(word=text).save()
-        return text + random.choice(UNKNOW_BUT_LIST) + reply + random.choice(RANDOM_REPLY_SUFIX_LIST)
 
 
 @event_handler.add(linebot.models.FollowEvent)
@@ -83,15 +46,30 @@ def join_event_handler(event):
 @event_handler.add(linebot.models.MessageEvent, message=linebot.models.TextMessage)
 def text_message_handler(event):
     '''テキストメッセージを処理する'''
-    # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
     message_text = event.message.text
-    if event.source.type != "user":
-        message_text.startswith(COMMAND_TRIGGER)
-
-    if event.message.text == "使い方":
-        reply = generate_help()
+    # コマンドの取得
+    command_param = None
+    if event.source.type == "user":
+        command_param = message_text
     else:
-        reply = generate_random_reply(event.message.text)
+        # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
+        if message_text.startswith(COMMAND_TRIGGER):
+            command_param = message_text[len(COMMAND_TRIGGER):]
+    command = None
+    params = []
+    if command_param:
+        items = command_param.split("/n")
+        command = items[0]
+        if len(items) > 1:
+            params = items[1:]
+
+    # コマンド実行
+    if command and command in mess_cmd.COMMAND_MAP:
+        reply = mess_cmd.COMMAND_MAP[command](*params)
+    else:
+        reply = mess_cmd.generate_random_reply(message_text)
+
+    # 返信を送信
     line_settings.api.reply_message(
         event.reply_token,
         linebot.models.TextSendMessage(text=reply))
