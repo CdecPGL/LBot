@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ["luftelli-bot.herokuapp.com"]
 # Application definition
 
 INSTALLED_APPS = [
+    'bot.apps.BotConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
