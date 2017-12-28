@@ -84,7 +84,7 @@ def join_event_handler(event):
 def text_message_handler(event):
     '''テキストメッセージを処理する'''
     # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
-    message_text = event.messege.text
+    message_text = event.message.text
     if event.source.type != "user":
         message_text.startswith(COMMAND_TRIGGER)
 
