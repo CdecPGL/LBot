@@ -1,7 +1,8 @@
 import inspect
 import random
 import sys
-from datetime import datetime
+import datetime
+from dateutil.parser import parse as datetime_parse
 
 import bot.utilities as util
 from bot.exceptions import GroupNotFoundError, UserNotFoundError
@@ -81,7 +82,7 @@ def test_command(event, *params):
 def add_task_command(event, task_name, dead_line, user_participants=None, group_participants=None):
     '''タスクを追加します。メッセージの送信者がタスク管理者に設定されます。
     1: タスク名
-    2: 期限
+    2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
     (3: 、か,区切りで参加者を指定。デフォルトは送信者)
     (4: 、か,区切りで参加グループを指定。デフォルトはなし)'''
     # すでに同名のタスクがないか確認
@@ -91,7 +92,12 @@ def add_task_command(event, task_name, dead_line, user_participants=None, group_
         error_list = []
         task_create_user = get_user_by_line_user_id_from_database(
             event.source.user_id)
-        task_deadline = datetime()
+        # 期限を変換
+        try:
+            task_deadline = datetime_parse(dead_line)
+        except ValueError:
+            sys.stderr.write("不正な時刻が設定されました。{}\n".format(sys.exc_info()[1]))
+            return None, ["期限には日時をしてくださいいいいい！"]
         new_task = Task(name=task_name, dead_line=task_deadline)
         new_task.managers.add(task_create_user)
         # 参加者設定
