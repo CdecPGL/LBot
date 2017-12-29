@@ -3,6 +3,7 @@
 import inspect
 import random
 import sys
+import datatime
 
 from dateutil.parser import parse as datetime_parse
 
@@ -73,7 +74,7 @@ def get_gropu_by_name_from_database(name: str)->Group:
 
 def help_command(command_source: CommandSource)->(str, [str]):
     '''ヘルプ'''
-    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(command_func)) for name, command_func in COMMAND_MAP.items()]), []
+    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(func_auth[0])) for name, func_auth in COMMAND_MAP.items()]), []
 
 
 def test_command(command_source: CommandSource, *params)->(str, [str]):
@@ -112,8 +113,9 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     # 期限を変換
     try:
         task_deadline = datetime_parse(dead_line)
+        if task_deadline <= datatime.datatime.now():
+            return None, ["期限が過去になってるよ……"]
     except ValueError:
-        sys.stderr.write("不正な時刻が設定されました。{}\n".format(sys.exc_info()[1]))
         return None, ["期限には日時をしてくださいいいいい！"]
     new_task = Task(name=task_name, dead_line=task_deadline)
     new_task.managers.add(task_create_user)
@@ -184,7 +186,7 @@ def execute_command(command: str, command_source: CommandSource, params: [str]):
                 reply, errors = command_func(command_source, *params)
             else:
                 reply = None
-                errors = ["お前にそんな権限はないよ。お前の権限：{}、コマンドの要求権限：{}。".format(
+                errors = ["お前にそんな権限はないよ。お前の権限：{}、コマンドの要求権限：{}。権限の変更はMasterユーザーに頼んでネ^_^".format(
                     user_authority.name, command_authority.name)]
             # 結果を返す
             if reply is None:
