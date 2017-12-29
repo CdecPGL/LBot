@@ -60,7 +60,7 @@ def text_message_handler(event):
     command = None
     params = []
     if command_param:
-        items = command_param.split("\n")
+        items = [item.rstrip("\n") for item in command_param.split("\n")]
         command = items[0]
         if len(items) > 1:
             params = items[1:]
