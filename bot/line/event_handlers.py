@@ -4,6 +4,7 @@ import linebot
 
 import bot.line.line_settings as line_settings
 import bot.message_commands as mess_cmd
+import bot.utilities as util
 
 COMMAND_TRIGGER_LIST = ["#", "＃"]
 
@@ -46,7 +47,7 @@ def join_event_handler(event):
 @event_handler.add(linebot.models.MessageEvent, message=linebot.models.TextMessage)
 def text_message_handler(event):
     '''テキストメッセージを処理する'''
-    message_text = event.message.text
+    message_text = util.unify_newline_code(event.message.text)
     # コマンドの取得
     command_param = None
     if event.source.type == "user":
