@@ -59,9 +59,9 @@ class Group(models.Model):
     # グループ名。グループ管理者のみ変更可能
     name = models.CharField(max_length=64, null=True)
     # 管理者。グループ管理者のみ変更可能
-    managers = models.ManyToManyField(User, related_name="group_managers")
+    managers = models.ManyToManyField(User, related_name="managing_groups")
     # メンバー。グループ管理者のみ変更可能
-    members = models.ManyToManyField(User, related_name="group_members")
+    members = models.ManyToManyField(User, related_name="belonging_groups")
     # LINEグループ。グループ管理者のみ変更可能
     line_group = models.OneToOneField(
         LineGroup, on_delete=models.SET_NULL, null=True)
@@ -84,12 +84,11 @@ class Task(models.Model):
     # 締め切り。タスク作成時に設定。タスクマスターのみ変更可能
     deadline = models.DateTimeField()
     # タスクの管理者。タスク管理者のみ変更可能
-    managers = models.ManyToManyField(User, related_name="task_managers")
+    managers = models.ManyToManyField(User, related_name="managing_tasks")
     # タスクの参加者。タスク管理者のみ変更可能
-    user_participants = models.ManyToManyField(
-        User, related_name="user_participants")
+    participants = models.ManyToManyField(User, related_name="belonging_tasks")
     # タスクの参加グループ。タスク管理者のみ変更可能
-    group_participants = models.ManyToManyField(Group)
+    groups = models.ManyToManyField(Group)
     # Asanaタスク。タスク管理者のみ変更可能
     asana_task = models.OneToOneField(
         AsanaTask, on_delete=models.SET_NULL, null=True)

@@ -1,9 +1,9 @@
 '''メッセージによるコマンド関連'''
 
+import datetime
 import inspect
 import random
 import sys
-import datetime
 
 from dateutil.parser import parse as datetime_parse
 
@@ -72,11 +72,32 @@ def get_gropu_by_name_from_database(name: str)->Group:
             "グループ(名前: {})が見つかりませんでした。".format(name))
 
 
+__command_map = {}
+
+def add_command_handler(command_name, authority):
+    '''コマンドハンドラを追加するデコレータ。
+    第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
+    返信がNoneの場合はコマンド失敗とみなす。'''
+    def decorator(func):
+        global __command_map
+        __command_map[command_name] = (func, authority)
+    return decorator
+
+
+@add_command_handler("使い方", UserAuthority.Watcher)
 def help_command(command_source: CommandSource)->(str, [str]):
     '''ヘルプ'''
-    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(func_auth[0])) for name, func_auth in COMMAND_MAP.items()]), []
+    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(func_auth[0])) for name, func_auth in __command_map.items()]), []
 
 
+@add_command_handler("タスク編集", UserAuthority.Watcher)
+@add_command_handler("ユーザー確認", UserAuthority.Watcher)
+@add_command_handler("ユーザー編集", UserAuthority.Watcher)
+@add_command_handler("ユーザー権限変更", UserAuthority.Master)
+@add_command_handler("グループ編集", UserAuthority.Watcher)
+@add_command_handler("議事録開始", UserAuthority.Editor)
+@add_command_handler("議事録終了", UserAuthority.Editor)
+@add_command_handler("テスト", UserAuthority.Master)
 def test_command(command_source: CommandSource, *params)->(str, [str]):
     '''テストコマンド'''
     reply = '<送信者>\n'
@@ -98,7 +119,8 @@ def test_command(command_source: CommandSource, *params)->(str, [str]):
     return reply, []
 
 
-def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, user_participants: str=None, group_participants: str=None)->(str, [str]):
+@add_command_handler("タスク追加", UserAuthority.Editor)
+def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, participants: str=None, groups: str=None)->(str, [str]):
     '''タスクを追加します。メッセージの送信者がタスク管理者に設定されます。
     1: タスク名
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
@@ -120,65 +142,50 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     new_task = Task.objects.create(name=task_name, deadline=task_deadline)
     new_task.managers.add(task_create_user)
     # 参加者設定
-    if user_participants:
+    if participants:
         user_name_list = util.split_command_paramater_strig(
-            user_participants)
+            participants)
         for user_name in user_name_list:
             try:
-                new_task.user_participants.add(
+                new_task.participants.add(
                     get_user_by_name_from_database(user_name))
             except UserNotFoundError:
                 error_list.append(
                     "ユーザー「{}」が見つからないため、参加者に追加できませんでした。".format(user_name))
-    else:
-        new_task.user_participants.add(task_create_user)
+    elif participants:
+        new_task.participants.add(task_create_user)
     # 参加グループ設定
-    if group_participants:
+    if groups:
         group_name_list = util.split_command_paramater_strig(
-            group_participants)
+            groups)
         for group_name in group_name_list:
             try:
-                new_task.group_participants.add(
+                new_task.group.add(
                     get_gropu_by_name_from_database(group_name))
             except GroupNotFoundError:
                 error_list.append(
                     "グループ「{}」が見つからないため、参加グループに追加できませんでした。".format(group_name))
     # データベースに保存
     new_task.save()
-    return "「{}」タスクを作成し、期限を{}に設定しました。".format(task_name, task_deadline), error_list
+    return "「{}」タスクを作成し、期限を{}に設定しました。".format(task_name, task_deadline.strftime('%Y/%m/%d %H:%M:%S')), error_list
 
 
+@add_command_handler("タスク確認", UserAuthority.Watcher)
 def check_task_command(command_source: CommandSource)->(str, [str]):
     '''タスク確認コマンド'''
     pass
 
 
+@add_command_handler("タスク削除", UserAuthority.Watcher)
 def remove_task_command(command_source: CommandSource)->(str, [str]):
     '''タスク削除コマンド'''
     pass
 
 
-# 第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数。返信がNoneの場合はコマンド失敗とみなす
-COMMAND_MAP = {
-    "使い方": (help_command, UserAuthority.Watcher),
-    "タスク追加": (add_task_command, UserAuthority.Editor),
-    "タスク確認": (check_task_command, UserAuthority.Watcher),
-    "タスク削除": (remove_task_command, UserAuthority.Watcher),
-    "タスク編集": (test_command, UserAuthority.Watcher),
-    "ユーザー確認": (test_command, UserAuthority.Watcher),
-    "ユーザー編集": (test_command, UserAuthority.Watcher),
-    "ユーザー権限変更": (test_command, UserAuthority.Master),
-    "グループ編集": (test_command, UserAuthority.Watcher),
-    "議事録開始": (test_command, UserAuthority.Watcher),
-    "議事録終了": (test_command, UserAuthority.Watcher),
-    "テスト": (test_command, UserAuthority.Master),
-}
-
-
 def execute_command(command: str, command_source: CommandSource, params: [str]):
     '''コマンド実行。返信メッセージを返す'''
-    if command in COMMAND_MAP:
-        command_func, command_authority = COMMAND_MAP[command]
+    if command in __command_map:
+        command_func, command_authority = __command_map[command]
         # 権限の確認
         user_authority = UserAuthority[command_source.user_data.authority]
         if user_authority.check(command_authority):
