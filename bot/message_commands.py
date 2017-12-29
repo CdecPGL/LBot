@@ -72,22 +72,22 @@ def get_gropu_by_name_from_database(name: str)->Group:
             "グループ(名前: {})が見つかりませんでした。".format(name))
 
 
-command_map = {}
+__command_map = {}
 
 def add_command_handler(command_name, authority):
     '''コマンドハンドラを追加するデコレータ。
     第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
     返信がNoneの場合はコマンド失敗とみなす。'''
     def decorator(func):
-        global command_map
-        command_map[command_name] = (func, authority)
+        global __command_map
+        __command_map[command_name] = (func, authority)
     return decorator
 
 
 @add_command_handler("使い方", UserAuthority.Watcher)
 def help_command(command_source: CommandSource)->(str, [str]):
     '''ヘルプ'''
-    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(func_auth[0])) for name, func_auth in command_map.items()]), []
+    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(func_auth[0])) for name, func_auth in __command_map.items()]), []
 
 
 @add_command_handler("タスク編集", UserAuthority.Watcher)
@@ -184,10 +184,9 @@ def remove_task_command(command_source: CommandSource)->(str, [str]):
 
 def execute_command(command: str, command_source: CommandSource, params: [str]):
     '''コマンド実行。返信メッセージを返す'''
-    global command_map
-    print(command_map)
-    if command in command_map:
-        command_func, command_authority = command_map[command]
+    print(__command_map)
+    if command in __command_map:
+        command_func, command_authority = __command_map[command]
         # 権限の確認
         user_authority = UserAuthority[command_source.user_data.authority]
         if user_authority.check(command_authority):
