@@ -55,8 +55,8 @@ def text_message_handler(event):
         # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
         hit_command_trigger_list = [
             command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
-    if hit_command_trigger_list:
-        command_param = message_text[len(hit_command_trigger_list[0]):]
+        if hit_command_trigger_list:
+            command_param = message_text[len(hit_command_trigger_list[0]):]
     command = None
     params = []
     if command_param:
