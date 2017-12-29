@@ -86,7 +86,7 @@ def add_command_handler(command_name, authority):
 @add_command_handler("使い方", UserAuthority.Watcher)
 def help_command(command_source: CommandSource)->(str, [str]):
     '''ヘルプ'''
-    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(func_auth[0])) for name, func_auth in __command_map.items()]), []
+    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(func_auth[0])) for name, func_auth in command_map.items()]), []
 
 
 @add_command_handler("タスク編集", UserAuthority.Watcher)
@@ -183,8 +183,8 @@ def remove_task_command(command_source: CommandSource)->(str, [str]):
 
 def execute_command(command: str, command_source: CommandSource, params: [str]):
     '''コマンド実行。返信メッセージを返す'''
-    if command in __command_map:
-        command_func, command_authority = __command_map[command]
+    if command in command_map:
+        command_func, command_authority = command_map[command]
         # 権限の確認
         user_authority = UserAuthority[command_source.user_data.authority]
         if user_authority.check(command_authority):
