@@ -90,7 +90,7 @@ def add_task_command(event, task_name, dead_line, user_participants=None, group_
     try:
         error_list = []
         task_create_user = get_user_by_line_user_id_from_database(
-            event.source.usesr_id)
+            event.source.user_id)
         task_deadline = datetime()
         new_task = Task(name=task_name, dead_line=task_deadline)
         new_task.managers.add(task_create_user)
