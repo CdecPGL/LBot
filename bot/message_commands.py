@@ -80,7 +80,7 @@ def add_command_handler(command_name, authority):
     返信がNoneの場合はコマンド失敗とみなす。'''
     def decorator(func):
         global command_map
-        print(len(command_map))
+        print(command_map)
         command_map[command_name] = (func, authority)
     return decorator
 
