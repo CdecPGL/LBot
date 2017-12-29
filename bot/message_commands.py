@@ -79,6 +79,7 @@ def add_command_handler(command_name, authority):
     第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
     返信がNoneの場合はコマンド失敗とみなす。'''
     def decorator(func):
+        decorator.__doc__ = func.__doc__
         __command_map[command_name] = (func, authority)
     return decorator
 
@@ -183,7 +184,6 @@ def remove_task_command(command_source: CommandSource)->(str, [str]):
 
 def execute_command(command: str, command_source: CommandSource, params: [str]):
     '''コマンド実行。返信メッセージを返す'''
-    print(__command_map)
     if command in __command_map:
         command_func, command_authority = __command_map[command]
         # 権限の確認
