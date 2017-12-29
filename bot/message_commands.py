@@ -184,6 +184,7 @@ def remove_task_command(command_source: CommandSource)->(str, [str]):
 
 def execute_command(command: str, command_source: CommandSource, params: [str]):
     '''コマンド実行。返信メッセージを返す'''
+    global command_map
     print(command_map)
     if command in command_map:
         command_func, command_authority = command_map[command]
