@@ -61,7 +61,7 @@ class Group(models.Model):
     # 管理者。グループ管理者のみ変更可能
     managers = models.ManyToManyField(User, related_name="group_managers")
     # メンバー。グループ管理者のみ変更可能
-    members = models.ManyToManyField(User, related_name="gropu_members")
+    members = models.ManyToManyField(User, related_name="group_members")
     # LINEグループ。グループ管理者のみ変更可能
     line_group = models.OneToOneField(
         LineGroup, on_delete=models.SET_NULL, null=True)
