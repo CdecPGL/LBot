@@ -69,7 +69,7 @@ def text_message_handler(event):
 
     # コマンドを実行し返信を送信。コマンドがない(自分宛てのメッセージではない)場合は返信しない
     if command:
-        reply = mess_cmd.execute_command(command, params)
+        reply = mess_cmd.execute_command(command, event, params)
         line_settings.api.reply_message(
             event.reply_token,
             linebot.models.TextSendMessage(text=reply))
