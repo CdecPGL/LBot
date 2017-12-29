@@ -1,10 +1,13 @@
+'''メッセージによるコマンド関連'''
+
 import inspect
 import random
 import sys
-import datetime
+
 from dateutil.parser import parse as datetime_parse
 
 import bot.utilities as util
+from bot.authorities import UserAuthority
 from bot.exceptions import GroupNotFoundError, UserNotFoundError
 from bot.models import Group, Task, User, Vocabulary
 
@@ -13,11 +16,19 @@ KNOW_BUT_LIST = ["は知ってるけど、", "は当たり前だね。でも",
 UNKNOW_BUT_LIST = ["はよく分からないけど、", "はどうでもいいから、",
                    "は忘れた。話は変わって", "は消えたよ。ということで", "っておいしいの？", "? OK. Then "]
 RANDOM_REPLY_SUFIX_LIST = ["じゃない？", "だよね。", "なんだって！",
-                           "、はあ。", "らしいよ。知らんけど", "はクソ。", ", is it right?", "喧嘩売ってんの？"]
+                           "、はあ。", "らしいよ。知らんけど", "はクソ。", ", is it right?", "、喧嘩売ってんの？"]
 MAX_VOCABLARY_COUNT = 100
 
 
-def generate_random_word():
+class CommandSource(object):
+    '''コマンド送信元のデータ'''
+
+    def __init__(self, user_data: User, group_data: Group):
+        self.user_data = user_data
+        self.group_data = group_data
+
+
+def generate_random_word()->str:
     '''ランダムな単語を生成する'''
     if Vocabulary.objects.count():
         return Vocabulary.objects.order_by('?')[0].word
@@ -25,7 +36,7 @@ def generate_random_word():
         return "何にも分からない……"
 
 
-def generate_random_reply(text):
+def generate_random_reply(text: str)->str:
     '''返信を生成する'''
     # 投げかけられた言葉を検索
     try:
@@ -42,16 +53,7 @@ def generate_random_reply(text):
         return text + random.choice(UNKNOW_BUT_LIST) + reply + random.choice(RANDOM_REPLY_SUFIX_LIST)
 
 
-def get_user_by_line_user_id_from_database(line_user_id):
-    '''LINEのユーザーIDでデータベースからユーザーを取得する。ない場合は作成する'''
-    try:
-        return User.objects.get(line_user__user_id__exact=line_user_id)
-    except User.DoesNotExist:
-        raise UserNotFoundError(
-            "ユーザー(LineUserID: {})が見つかりませんでした。".format(line_user_id))
-
-
-def get_user_by_name_from_database(name):
+def get_user_by_name_from_database(name: str)->User:
     '''ユーザ名でデータベースからユーザーを取得する'''
     try:
         return User.objects.get(name__exact=name)
@@ -60,7 +62,7 @@ def get_user_by_name_from_database(name):
             "ユーザー(名前: {})が見つかりませんでした。".format(name))
 
 
-def get_gropu_by_name_from_database(name):
+def get_gropu_by_name_from_database(name: str)->Group:
     '''グループ名でデータベースからユーザーを取得する'''
     try:
         return Group.objects.get(name__exact=name)
@@ -69,17 +71,33 @@ def get_gropu_by_name_from_database(name):
             "グループ(名前: {})が見つかりませんでした。".format(name))
 
 
-def help_command(event):
+def help_command(command_source: CommandSource)->(str, [str]):
     '''ヘルプ'''
     return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(command_func)) for name, command_func in COMMAND_MAP.items()]), []
 
 
-def test_command(event, *params):
+def test_command(command_source: CommandSource, *params)->(str, [str]):
     '''テストコマンド'''
-    return "<コマンド引数>\n" + "\n".join(["{}: {}".format(idx + 1, param) for idx, param in enumerate(params)]), []
+    reply = '<送信者>\n'
+    reply += 'LineUserID: {}\n'.format(
+        command_source.user_data.line_user.user_id)
+    reply += 'Name: {}\n'.format(command_source.user_data.name)
+    reply += '<送信元グループ>\n'
+    if command_source.group_data:
+        line_group_id = command_source.group_data.line_group.group_id
+        group_name = command_source.group_data.name if command_source.group_data.name else '未設定'
+    else:
+        line_group_id = "なし"
+        group_name = "なし"
+    reply += 'LineGroupID: {}\n'.format(line_group_id)
+    reply += 'Name: {}\n'.format(group_name)
+    reply += '<コマンド引数>\n'
+    reply += "\n".join(["{}: {}".format(idx + 1, param)
+                        for idx, param in enumerate(params)])
+    return reply, []
 
 
-def add_task_command(event, task_name, dead_line, user_participants=None, group_participants=None):
+def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, user_participants: str=None, group_participants: str=None)->(str, [str]):
     '''タスクを追加します。メッセージの送信者がタスク管理者に設定されます。
     1: タスク名
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
@@ -88,79 +106,87 @@ def add_task_command(event, task_name, dead_line, user_participants=None, group_
     # すでに同名のタスクがないか確認
     if Task.objects.filter(name__exact=task_name).count():
         return None, ["タスク「{}」はすでに存在します……".format(task_name)]
+
+    error_list = []
+    task_create_user = command_source.user_data
+    # 期限を変換
     try:
-        error_list = []
-        task_create_user = get_user_by_line_user_id_from_database(
-            event.source.user_id)
-        # 期限を変換
-        try:
-            task_deadline = datetime_parse(dead_line)
-        except ValueError:
-            sys.stderr.write("不正な時刻が設定されました。{}\n".format(sys.exc_info()[1]))
-            return None, ["期限には日時をしてくださいいいいい！"]
-        new_task = Task(name=task_name, dead_line=task_deadline)
-        new_task.managers.add(task_create_user)
-        # 参加者設定
-        if user_participants:
-            user_name_list = util.split_command_paramater_strig(
-                user_participants)
-            for user_name in user_name_list:
-                try:
-                    new_task.user_participants.add(
-                        get_user_by_name_from_database(user_name))
-                except UserNotFoundError as exce:
-                    error_list.append(
-                        "ユーザー「{}」が見つからないため、参加者に追加できませんでした。".format(user_name))
-        else:
-            new_task.user_participants.add(task_create_user)
-        # 参加グループ設定
-        if group_participants:
-            group_name_list = util.split_command_paramater_strig(
-                group_participants)
-            for group_name in group_name_list:
-                try:
-                    new_task.group_participants.add(
-                        get_gropu_by_name_from_database(group_name))
-                except GroupNotFoundError as exce:
-                    error_list.append(
-                        "グループ「{}」が見つからないため、参加グループに追加できませんでした。".format(group_name))
-        # データベースに保存
-        new_task.save()
-        return "タスクを作成しました。", error_list
-
-    except UserNotFoundError as exce:
-        sys.stderr.write(exce.message + "\n")
-        return None, ["知らない人がタスクを作成しようとました……"]
+        task_deadline = datetime_parse(dead_line)
+    except ValueError:
+        sys.stderr.write("不正な時刻が設定されました。{}\n".format(sys.exc_info()[1]))
+        return None, ["期限には日時をしてくださいいいいい！"]
+    new_task = Task(name=task_name, dead_line=task_deadline)
+    new_task.managers.add(task_create_user)
+    # 参加者設定
+    if user_participants:
+        user_name_list = util.split_command_paramater_strig(
+            user_participants)
+        for user_name in user_name_list:
+            try:
+                new_task.user_participants.add(
+                    get_user_by_name_from_database(user_name))
+            except UserNotFoundError:
+                error_list.append(
+                    "ユーザー「{}」が見つからないため、参加者に追加できませんでした。".format(user_name))
+    else:
+        new_task.user_participants.add(task_create_user)
+    # 参加グループ設定
+    if group_participants:
+        group_name_list = util.split_command_paramater_strig(
+            group_participants)
+        for group_name in group_name_list:
+            try:
+                new_task.group_participants.add(
+                    get_gropu_by_name_from_database(group_name))
+            except GroupNotFoundError:
+                error_list.append(
+                    "グループ「{}」が見つからないため、参加グループに追加できませんでした。".format(group_name))
+    # データベースに保存
+    new_task.save()
+    return "「{}」タスクを作成し、期限を{}に設定しました。".format(task_name, task_deadline), error_list
 
 
-def check_task_command(event, task_name, deadline):
+def check_task_command(command_source: CommandSource)->(str, [str]):
     '''タスク確認コマンド'''
     pass
 
 
-def remove_task_command(event):
+def remove_task_command(command_source: CommandSource)->(str, [str]):
     '''タスク削除コマンド'''
+    pass
 
 
-# 第一引数にイベントオブジェクト、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数。返信がNoneの場合はコマンド失敗とみなす
+# 第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数。返信がNoneの場合はコマンド失敗とみなす
 COMMAND_MAP = {
-    "使い方": help_command,
-    "タスク追加": add_task_command,
-    "タスク確認": check_task_command,
-    "タスク削除": remove_task_command,
-    "タスク編集": test_command,
-    "ユーザー確認": test_command,
-    "ユーザー編集": test_command,
-    "テスト": test_command,
+    "使い方": (help_command, UserAuthority.Watcher),
+    "タスク追加": (add_task_command, UserAuthority.Editor),
+    "タスク確認": (check_task_command, UserAuthority.Watcher),
+    "タスク削除": (remove_task_command, UserAuthority.Watcher),
+    "タスク編集": (test_command, UserAuthority.Watcher),
+    "ユーザー確認": (test_command, UserAuthority.Watcher),
+    "ユーザー編集": (test_command, UserAuthority.Watcher),
+    "ユーザー権限変更": (test_command, UserAuthority.Master),
+    "グループ編集": (test_command, UserAuthority.Watcher),
+    "議事録開始": (test_command, UserAuthority.Watcher),
+    "議事録終了": (test_command, UserAuthority.Watcher),
+    "テスト": (test_command, UserAuthority.Master),
 }
 
 
-def execute_command(command, event,  params):
+def execute_command(command: str, command_source: CommandSource, params: [str]):
     '''コマンド実行。返信メッセージを返す'''
     if command in COMMAND_MAP:
         try:
-            command_func = COMMAND_MAP[command]
-            reply, errors = command_func(event, *params)
+            command_func, command_authority = COMMAND_MAP[command]
+            # 権限の確認
+            user_authority = UserAuthority(command_source.user_data.authority)
+            if user_authority.check(command_authority):
+                reply, errors = command_func(command_source, *params)
+            else:
+                reply = None
+                errors = ["お前にそんな権限はないよ。お前の権限：{}、コマンドの要求権限：{}。".format(
+                    user_authority.name, command_authority.name)]
+            # 結果を返す
             if reply is None:
                 errors.append("コマンド「{}」の実行に失敗しちゃった。。。".format(command))
             else:

@@ -1,5 +1,7 @@
 from django.db import models
 
+from bot.authorities import UserAuthority
+
 # Create your models here.
 
 
@@ -25,9 +27,9 @@ class AsanaUser(models.Model):
 class User(models.Model):
     '''ユーザーデータベース'''
     AUTHORITY_CHOICES = (
-        ("Master", "Master"),
-        ("Editor", "Editor"),
-        ("Watcher", "Watcher"),
+        (UserAuthority.Master.value, UserAuthority.Master.name),
+        (UserAuthority.Editor.value, UserAuthority.Editor.name),
+        (UserAuthority.Watcher.value, UserAuthority.Watcher.name),
     )
     # ユーザー名。そのユーザー自身のみ設定可能
     name = models.CharField(max_length=64)
@@ -38,15 +40,13 @@ class User(models.Model):
     asana_user = models.OneToOneField(
         AsanaUser, on_delete=models.SET_NULL, null=True)
     # 権限。Masterユーザーのみ変更可能
-    authority = models.CharField(max_length=64, choices=AUTHORITY_CHOICES)
+    authority = models.IntegerField(choices=AUTHORITY_CHOICES)
 
 
 class LineGroup(models.Model):
     '''LINEのグループデータベース'''
     # グループID。LINEから取得
     group_id = models.CharField(max_length=64, null=True)
-    # グループ名。LINEから取得
-    name = models.CharField(max_length=64, null=True)
 
 
 class AsanaTeam(models.Model):
@@ -57,7 +57,7 @@ class AsanaTeam(models.Model):
 class Group(models.Model):
     '''グループデータベース'''
     # グループ名。グループ管理者のみ変更可能
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=64, null=True)
     # 管理者。グループ管理者のみ変更可能
     managers = models.ManyToManyField(User, related_name="group_managers")
     # メンバー。グループ管理者のみ変更可能

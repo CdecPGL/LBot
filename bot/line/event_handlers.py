@@ -3,8 +3,10 @@ import sys
 import linebot
 
 import bot.line.line_settings as line_settings
+import bot.line.line_utilities as line_util
 import bot.message_commands as mess_cmd
 import bot.utilities as util
+from bot.exceptions import GroupNotFoundError, UserNotFoundError
 
 COMMAND_TRIGGER_LIST = ["#", "＃"]
 
@@ -29,7 +31,7 @@ def join_event_handler(event):
     '''参加イベントを処理する'''
     if event.source.type == "group":
         reply = 'よろしくお願いしますლ(´ڡ`ლ)\n"{0}[コマンド内容]"でコマンド実行\n"{0}使い方"で使い方を表示するよ'.format(
-            COMMAND_TRIGGER)
+            "又は".join(COMMAND_TRIGGER_LIST))
         line_settings.api.reply_message(
             event.reply_token,
             linebot.models.TextSendMessage(text=reply))
@@ -48,16 +50,21 @@ def join_event_handler(event):
 def text_message_handler(event):
     '''テキストメッセージを処理する'''
     message_text = util.unify_newline_code(event.message.text)
-    # コマンドの取得
+    # コマンドとパラメータの取得
     command_param = None
     if event.source.type == "user":
         command_param = message_text
-    else:
+    elif event.source.type == "group":
         # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
         hit_command_trigger_list = [
             command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
         if hit_command_trigger_list:
             command_param = message_text[len(hit_command_trigger_list[0]):]
+    else:
+        sys.stderr.write('送信元"{}"には対応していません。\n'.format(event.source.type))
+        return
+
+    # コマンドとパラメータの抽出
     command = None
     params = []
     if command_param:
@@ -69,7 +76,23 @@ def text_message_handler(event):
 
     # コマンドを実行し返信を送信。コマンドがない(自分宛てのメッセージではない)場合は返信しない
     if command:
-        reply = mess_cmd.execute_command(command, event, params)
+        # メッセージ送信者をデータベースから検索し、なかったら作成
+        try:
+            source_user = line_util.get_user_by_line_user_id_from_database(
+                event.source.user_id)
+        except UserNotFoundError:
+            source_user = line_util.register_user_by_line_user_id(
+                event.source.user_id)
+        # メッセージ送信グループをデータベースから検索し、なかったら作成
+        try:
+            source_group = line_util.get_group_by_line_group_id_from_database(
+                event.source.group_id) if event.source.type == "group" else None
+        except GroupNotFoundError:
+            source_user = line_util.register_group_by_line_group_id(
+                event.source.group_id)
+        # コマンド実行
+        command_source = mess_cmd.CommandSource(source_user, source_group)
+        reply = mess_cmd.execute_command(command, command_source, params)
         line_settings.api.reply_message(
             event.reply_token,
             linebot.models.TextSendMessage(text=reply))
