@@ -179,7 +179,7 @@ def execute_command(command: str, command_source: CommandSource, params: [str]):
         try:
             command_func, command_authority = COMMAND_MAP[command]
             # 権限の確認
-            user_authority = UserAuthority(command_source.user_data.authority)
+            user_authority = UserAuthority[command_source.user_data.authority]
             if user_authority.check(command_authority):
                 reply, errors = command_func(command_source, *params)
             else:
