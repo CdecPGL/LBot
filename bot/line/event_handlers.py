@@ -88,7 +88,7 @@ def text_message_handler(event):
             source_group = line_util.get_group_by_line_group_id_from_database(
                 event.source.group_id) if event.source.type == "group" else None
         except GroupNotFoundError:
-            source_user = line_util.register_group_by_line_group_id(
+            source_group = line_util.register_group_by_line_group_id(
                 event.source.group_id)
         # コマンド実行
         command_source = mess_cmd.CommandSource(source_user, source_group)
