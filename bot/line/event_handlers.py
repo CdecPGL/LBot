@@ -5,7 +5,7 @@ import linebot
 import bot.line.line_settings as line_settings
 import bot.message_commands as mess_cmd
 
-COMMAND_TRIGGER = "#"
+COMMAND_TRIGGER_LIST = ["#", "＃"]
 
 event_handler = linebot.WebhookHandler(line_settings.CHANNEL_SECRET)
 
@@ -53,8 +53,10 @@ def text_message_handler(event):
         command_param = message_text
     else:
         # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
-        if message_text.startswith(COMMAND_TRIGGER):
-            command_param = message_text[len(COMMAND_TRIGGER):]
+        hit_command_trigger_list = [
+            command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
+    if hit_command_trigger_list:
+        command_param = message_text[len(hit_command_trigger_list[0]):]
     command = None
     params = []
     if command_param:
