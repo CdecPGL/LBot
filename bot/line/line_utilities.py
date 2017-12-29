@@ -32,7 +32,7 @@ def register_user_by_line_user_id(line_user_id):
     new_line_user = LineUser.objects.create(user_id=line_user_id, name=name)
     # ユーザをデータベースに登録
     new_user = User.objects.create(name=name, line_user=new_line_user,
-                                   authority=UserAuthority.name)
+                                   authority=UserAuthority.Watcher.name)
     print("ユーザー(LineID: {}, Name: {})をデータベースに登録しました。".format(line_user_id, name))
     return new_user
 
