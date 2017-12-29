@@ -178,25 +178,27 @@ COMMAND_MAP = {
 def execute_command(command: str, command_source: CommandSource, params: [str]):
     '''コマンド実行。返信メッセージを返す'''
     if command in COMMAND_MAP:
-        try:
-            command_func, command_authority = COMMAND_MAP[command]
-            # 権限の確認
-            user_authority = UserAuthority[command_source.user_data.authority]
-            if user_authority.check(command_authority):
-                reply, errors = command_func(command_source, *params)
-            else:
-                reply = None
-                errors = ["お前にそんな権限はないよ。お前の権限：{}、コマンドの要求権限：{}。権限の変更はMasterユーザーに頼んでネ^_^".format(
-                    user_authority.name, command_authority.name)]
-            # 結果を返す
-            if reply is None:
-                errors.append("コマンド「{}」の実行に失敗しちゃった。。。".format(command))
-            else:
-                errors.append(reply)
-            return "\n".join(errors)
-        except TypeError:
-            sys.stderr.write("コマンドの実行でエラーが発生。({})".format(sys.exc_info()[1]))
-            return "コマンド引数の数が不正です。\n■「{}」コマンドの使い方\n".format(command) + inspect.getdoc(command_func)
+        command_func, command_authority = COMMAND_MAP[command]
+        # 権限の確認
+        user_authority = UserAuthority[command_source.user_data.authority]
+        if user_authority.check(command_authority):
+            try:
+                inspect.signature(command_func).bind(command_source, *params)
+            except TypeError:
+                sys.stderr.write(
+                    "コマンドの実行でエラーが発生。({})".format(sys.exc_info()[1]))
+                return "コマンド引数の数が不正です。\n■「{}」コマンドの使い方\n".format(command) + inspect.getdoc(command_func)
+            reply, errors = command_func(command_source, *params)
+        else:
+            reply = None
+            errors = ["お前にそんな権限はないよ。お前の権限：{}、コマンドの要求権限：{}。権限の変更はMasterユーザーに頼んでネ^_^".format(
+                user_authority.name, command_authority.name)]
+        # 結果を返す
+        if reply is None:
+            errors.append("コマンド「{}」の実行に失敗しちゃった。。。".format(command))
+        else:
+            errors.append(reply)
+        return "\n".join(errors)
     elif command is not None:
         return generate_random_reply(command)
     else:
