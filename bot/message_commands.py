@@ -117,7 +117,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             return None, ["期限が過去になってるよ……"]
     except ValueError:
         return None, ["期限には日時をしてくださいいいいい！"]
-    new_task = Task(name=task_name, dead_line=task_deadline)
+    new_task = Task(name=task_name, deadline=task_deadline)
     new_task.managers.add(task_create_user)
     # 参加者設定
     if user_participants:
