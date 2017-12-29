@@ -1,4 +1,6 @@
 import random
+import sys
+import inspect
 
 from bot.models import Vocabulary
 
@@ -38,15 +40,30 @@ def generate_random_reply(text):
 
 def help_command():
     '''ヘルプ'''
-    return '''使い方(未実装)'''
+    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(command_func)) for name, command_func in COMMAND_MAP.items()])
 
 
 def test_command(*params):
     '''テストコマンド'''
-    return "コマンド引数\n" + "\n".join(["{}: {}".format(idx + 1, param) for idx, param in enumerate(params)])
+    return "<コマンド引数>\n" + "\n".join(["{}: {}".format(idx + 1, param) for idx, param in enumerate(params)])
 
 
 COMMAND_MAP = {
     "使い方": help_command,
     "テスト": test_command,
 }
+
+
+def execute_command(command, params):
+    '''コマンド実行'''
+    if command in COMMAND_MAP:
+        try:
+            command_func = COMMAND_MAP[command]
+            command_func(*params)
+        except TypeError:
+            sys.stderr.write("コマンドの実行でエラーが発生。({})".format(sys.exc_info()[1]))
+            return "コマンド引数の数が不正です。使い方：\n" + inspect.getdoc(command_func)
+    elif command is not None:
+        return generate_random_reply(command)
+    else:
+        return None

@@ -5,7 +5,7 @@ import linebot
 import bot.line.line_settings as line_settings
 import bot.message_commands as mess_cmd
 
-COMMAND_TRIGGER = "ー！"
+COMMAND_TRIGGER = "#"
 
 event_handler = linebot.WebhookHandler(line_settings.CHANNEL_SECRET)
 
@@ -27,7 +27,7 @@ def follow_event_handler(event):
 def join_event_handler(event):
     '''参加イベントを処理する'''
     if event.source.type == "group":
-        reply = 'よろしくお願いしますლ(´ڡ`ლ)\n"{}[コマンド内容]"でコマンド実行\n"{}使い方"で使い方を表示するよ'.format(
+        reply = 'よろしくお願いしますლ(´ڡ`ლ)\n"{0}[コマンド内容]"でコマンド実行\n"{0}使い方"で使い方を表示するよ'.format(
             COMMAND_TRIGGER)
         line_settings.api.reply_message(
             event.reply_token,
@@ -63,13 +63,9 @@ def text_message_handler(event):
         if len(items) > 1:
             params = items[1:]
 
-    # コマンド実行
-    if command and command in mess_cmd.COMMAND_MAP:
-        reply = mess_cmd.COMMAND_MAP[command](*params)
-    else:
-        reply = mess_cmd.generate_random_reply(message_text)
-
-    # 返信を送信
-    line_settings.api.reply_message(
-        event.reply_token,
-        linebot.models.TextSendMessage(text=reply))
+    # コマンドを実行し返信を送信。コマンドがない(自分宛てのメッセージではない)場合は返信しない
+    if command:
+        reply = mess_cmd.execute_command(command, params)
+        line_settings.api.reply_message(
+            event.reply_token,
+            linebot.models.TextSendMessage(text=reply))
