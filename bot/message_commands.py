@@ -59,7 +59,7 @@ def execute_command(command, params):
     if command in COMMAND_MAP:
         try:
             command_func = COMMAND_MAP[command]
-            command_func(*params)
+            return command_func(*params)
         except TypeError:
             sys.stderr.write("コマンドの実行でエラーが発生。({})".format(sys.exc_info()[1]))
             return "コマンド引数の数が不正です。使い方：\n" + inspect.getdoc(command_func)
