@@ -27,9 +27,9 @@ class AsanaUser(models.Model):
 class User(models.Model):
     '''ユーザーデータベース'''
     AUTHORITY_CHOICES = (
-        (UserAuthority.Master.value, UserAuthority.Master.name),
-        (UserAuthority.Editor.value, UserAuthority.Editor.name),
-        (UserAuthority.Watcher.value, UserAuthority.Watcher.name),
+        (UserAuthority.Master.name, UserAuthority.Master.name),
+        (UserAuthority.Editor.name, UserAuthority.Editor.name),
+        (UserAuthority.Watcher.name, UserAuthority.Watcher.name),
     )
     # ユーザー名。そのユーザー自身のみ設定可能
     name = models.CharField(max_length=64)
@@ -40,7 +40,7 @@ class User(models.Model):
     asana_user = models.OneToOneField(
         AsanaUser, on_delete=models.SET_NULL, null=True)
     # 権限。Masterユーザーのみ変更可能
-    authority = models.IntegerField(choices=AUTHORITY_CHOICES)
+    authority = models.CharField(max_length=16, choices=AUTHORITY_CHOICES)
 
 
 class LineGroup(models.Model):
