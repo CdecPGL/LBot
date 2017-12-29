@@ -79,7 +79,6 @@ def add_command_handler(command_name, authority):
     第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
     返信がNoneの場合はコマンド失敗とみなす。'''
     def decorator(func):
-        global __command_map
         __command_map[command_name] = (func, authority)
     return decorator
 
