@@ -3,7 +3,7 @@
 import inspect
 import random
 import sys
-import datatime
+import datetime
 
 from dateutil.parser import parse as datetime_parse
 
@@ -113,7 +113,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     # 期限を変換
     try:
         task_deadline = datetime_parse(dead_line)
-        if task_deadline <= datatime.datatime.now():
+        if task_deadline <= datetime.datetime.now():
             return None, ["期限が過去になってるよ……"]
     except ValueError:
         return None, ["期限には日時をしてくださいいいいい！"]
