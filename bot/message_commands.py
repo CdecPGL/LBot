@@ -269,7 +269,7 @@ def change_user_authority(command_source: CommandSource, target_user_name: str, 
             return "変更は必要ないよ。", []
         # Masterユーザーの数を確認
         if current_authority == UserAuthority.Master:
-            if User.objects.filter(authority_exact=UserAuthority.Master.name).count() == 1:
+            if User.objects.filter(authority__exact=UserAuthority.Master.name).count() == 1:
                 return None, ["Masterユーザーがいなくなっちゃうよ。"]
         # 管理タスクがないか確認
         if target_authority == UserAuthority.Watcher:
