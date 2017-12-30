@@ -227,8 +227,8 @@ def execute_command(command: str, command_source: CommandSource, params: [str]):
                 inspect.signature(command_func).bind(command_source, *params)
             except TypeError:
                 sys.stderr.write(
-                    "コマンドの実行でエラーが発生。({})".format(sys.exc_info()[1]))
-                return "コマンド引数の数が不正です。\n■「{}」コマンドの使い方\n".format(command) + inspect.getdoc(command_func)
+                    "コマンドの実行でエラーが発生。({})\n".format(sys.exc_info()[1]))
+                return "コマンド引数の数が不正です。\n■「{}」コマンドの使い方\n{}".format(command, inspect.getdoc(command_func))
             reply, errors = command_func(command_source, *params)
         else:
             reply = None
