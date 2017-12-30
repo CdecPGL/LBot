@@ -1,7 +1,8 @@
 '''その他のメッセージコマンド'''
 
 from bot.authorities import UserAuthority
-from bot.message_command import CommandSource, add_command_handler
+from bot.message_commands.message_command import (CommandSource,
+                                                  add_command_handler)
 
 
 @add_command_handler("議事録開始", UserAuthority.Editor)

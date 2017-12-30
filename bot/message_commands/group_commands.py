@@ -3,7 +3,8 @@
 import bot.database_utilities as db_util
 from bot.authorities import UserAuthority
 from bot.exceptions import GroupNotFoundError
-from bot.message_command import CommandSource, add_command_handler
+from bot.message_commands.message_command import (CommandSource,
+                                                  add_command_handler)
 from bot.models import Group, User
 
 
