@@ -126,12 +126,12 @@ def test_command(command_source: CommandSource, *params)->(str, [str]):
 def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, participants: str = None, groups: str = None)->(str, [str]):
     '''タスクを追加します。
     メッセージの送信者がタスク管理者に設定されます。タスク管理者はそのタスクのあらゆる操作を実行できます。
-    参加者を指定しない場合は送信者が設定されます。参加者はそのタスクの情報を参照することができ、期限が近づくと通知されます。
-    また、グループを指定しない場合は送信元のグループが設定されます。グループを設定すると、そのグループメンバーは参加者でなくてもそのタスクを参照できます。
+    参加者はそのタスクの情報を参照することができ、期限が近づくと通知されます。
+    また、グループを設定すると、そのグループメンバーは参加者でなくてもそのタスクを参照できます。
     1: タスク名
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
     (3: 、か,区切りで参加者を指定。デフォルトは送信者。「全員」で参加グループ全員)
-    (4: 、か,区切りで参加グループを指定。デフォルトはなし)'''
+    (4: 、か,区切りで参加グループを指定。デフォルトは送信元グループ)'''
     # すでに同名のタスクがないか確認
     if Task.objects.filter(name__exact=task_name).count():
         return None, ["タスク「{}」はすでに存在します……".format(task_name)]
@@ -198,7 +198,8 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         new_task.save()
         reply = "「{}」タスクを作成し、期限を{}に設定しました。\n".format(
             task_name, task_deadline.strftime('%Y/%m/%d %H:%M:%S'))
-        reply += "■参加グループ\n{}\n".format("、".join(group_name_list))
+        reply += "■参加グループ\n{}\n".format("、".join(valid_group_name_list)
+                                        if valid_group_name_list else "なし")
         reply += "■参加者\n{}".format("、".join(valid_participant_name_list))
         return reply, error_list
     # 途中でエラーになったら作成したタスクは削除する
