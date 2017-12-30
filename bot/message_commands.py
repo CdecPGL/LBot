@@ -61,7 +61,7 @@ def check_task_group_authority(command_source: CommandSource, task: Task):
     '''グループにタスクの編集閲覧権限があるかどうか。
     タスクの関連グループに含まれていたら権限があるとみなす。
     グループが発信元でない場合は常に権限があるとみなす。'''
-    return not command_source.group_data or task.groups.filter(id_exact=command_source.group_data.id).exists()
+    return not command_source.group_data or task.groups.filter(id__exact=command_source.group_data.id).exists()
 
 
 def check_task_edit_autority(command_source: CommandSource, task: Task):
