@@ -255,7 +255,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             '''指定ユーザーのタスクをリストアップする'''
             user = db_util.get_user_by_name_from_database(name)
             # ユーザーの参加タスク
-            task_name_deadline_list = [(task.name, task.datetime) for task in user.belonging_tasks.all(
+            task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all(
             ) if check_task_watch_authority(command_source.user_data, task)]
             # 参加しているグループで全員指定されている
 
@@ -494,7 +494,7 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
             repply += "■グループ名\n{}\n".format(group.name)
             repply += "■LINEグループ\n{}\n".format(
                 "あり" if group.line_group else "なし")
-            repply += "■Asanaチーム\n{}\n".format(
+            repply += "■Asanaチーム\n{}".format(
                 "あり" if group.asana_team else "なし")
             return repply, []
         else:
