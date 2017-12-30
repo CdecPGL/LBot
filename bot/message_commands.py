@@ -65,12 +65,12 @@ def get_user_by_name_from_database(name: str)->User:
             "ユーザー(名前: {})が見つかりませんでした。".format(name))
 
 
-def get_gropu_by_name_from_database(name: str)->Group:
+def get_group_by_name_from_database(name: str)->Group:
     '''グループ名でデータベースからユーザーを取得する'''
     try:
         return Group.objects.get(name__exact=name)
     except Group.DoesNotExist:
-        raise UserNotFoundError(
+        raise GroupNotFoundError(
             "グループ(名前: {})が見つかりませんでした。".format(name))
 
 
@@ -158,7 +158,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             for group_name in group_name_list:
                 try:
                     new_task.groups.add(
-                        get_gropu_by_name_from_database(group_name))
+                        get_group_by_name_from_database(group_name))
                     group_name_list.append(group_name)
                 except GroupNotFoundError:
                     error_list.append(
