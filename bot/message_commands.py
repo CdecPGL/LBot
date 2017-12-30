@@ -146,7 +146,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     except ValueError:
         return None, ["期限には日時をしてくださいいいいい！"]
     new_task = Task.objects.create(
-        name=task_name, deadline=task_deadline, is_participate_all_in_group=False)
+        name=task_name, deadline=task_deadline, is_participate_all_in_groups=False)
     new_task.managers.add(task_create_user)
 
     # 参加グループ設定
@@ -175,7 +175,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     # 全員参加なら全員参加フラグを設定
     if participants == EVERYONE_WORD:
         if do_groups_exist:
-            new_task.is_participate_all_in_group = True
+            new_task.is_participate_all_in_groups = True
             participant_name_list.append("指定グループの全員")
         else:
             return None, ["参加者にグループメンバー全員が指定されたけど、グループが指定されてないよ。。。"]
