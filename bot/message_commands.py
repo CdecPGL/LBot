@@ -253,13 +253,17 @@ def edit_task_command(command_source: CommandSource)->(str, [str]):
 def change_user_authority(command_source: CommandSource, target_user_name: str, target_authority: str):
     '''ユーザーの権限を変更します。
     Master権限を持つユーザーがいなくなるような変更は行えません。
-    管理しているタスクがあるユーザーをWatcher権限にすることはできません。'''
+    管理しているタスクがあるユーザーをWatcher権限にすることはできません。
+    ■コマンド引数
+    1: 対象のユーザー名
+    2: 権限。「Master」、「Editor」、「Watcher」のいずれか'''
     try:
         user = get_user_by_name_from_database(target_user_name)
-        if target_authority not in UserAuthority:
+        try:
+            current_authority = UserAuthority[user.authority]
+            target_authority = UserAuthority[target_authority]
+        except KeyError:
             return None, ["指定された権限「{}」は存在しないよ。".format(target_authority)]
-        current_authority = UserAuthority[user.authority]
-        target_authority = UserAuthority[target_authority]
         # 変更の必要があるか確認
         if current_authority == target_authority:
             return "変更は必要ないよ。", []
