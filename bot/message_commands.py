@@ -395,7 +395,7 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
     コマンド引数
     (1: 対象のユーザー名。デフォルトは送信者)'''
     # 権限確認
-    if command_source.user_data.name != target_user_name and UserAuthority[command_source.user_data] != UserAuthority.Master:
+    if command_source.user_data.name != target_user_name and UserAuthority[command_source.user_data.authority] != UserAuthority.Master:
         return None, ["ユーザ情報は本人かMasterユーザーにしか表示できないんだよね。"]
     try:
         if target_user_name:
