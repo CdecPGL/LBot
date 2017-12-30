@@ -88,9 +88,28 @@ def add_command_handler(command_name, authority):
 
 
 @add_command_handler("使い方", UserAuthority.Watcher)
-def help_command(command_source: CommandSource)->(str, [str]):
-    '''ヘルプを表示します。'''
-    return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(func_auth[0])) for name, func_auth in __command_map.items()]), []
+def help_command(command_source: CommandSource, target_command: str = None)->(str, [str]):
+    '''使い方を表示します。コマンドの指定がない場合はコマンドの一覧を表示します。
+    ■コマンド引数
+    (1: 使い方を見たいコマンド名)'''
+    # コマンド一覧の作成。各コマンドの説明文は一行目のみを取り出したもの
+    command_list = []
+    for command_name, (command_func, command_authority) in __command_map.items():
+        command_doc = inspect.getdoc(command_func)
+        simple_doc = command_doc.split("\n")[0] if command_doc else "未設定"
+        command_list.append("■{}({})\n{}".format(
+            command_name, command_authority.name, simple_doc))
+    # ターゲットが指定されていたらそのコマンドの詳細を表示
+    if target_command:
+        if target_command in __command_map:
+            command_name, (command_func,
+                           command_authority) = __command_map[target_command]
+            return "<「{}」コマンドの使い方>\n■必要権限\n{}\n{}".format(command_name, command_authority.name, inspect.getdoc(command_func)), []
+        else:
+            return "「{}」コマンドは存在しません。\n<コマンド一覧>\n" + "\n".join(command_list), []
+    # 指定されていなかったらコマンドリストを表示
+    else:
+        return '「使い方」コマンドにコマンド名を指定することで、そのコマンドの詳細説明を表示します。\n<コマンド一覧>\n' + "\n".join(command_list), []
 
 
 @add_command_handler("タスク編集", UserAuthority.Watcher)
@@ -123,11 +142,12 @@ def test_command(command_source: CommandSource, *params)->(str, [str]):
 
 
 @add_command_handler("タスク追加", UserAuthority.Editor)
-def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, participants: str = None, groups: str = None)->(str, [str]):
+def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, participants: str=None, groups: str=None)->(str, [str]):
     '''タスクを追加します。
     メッセージの送信者がタスク管理者に設定されます。タスク管理者はそのタスクのあらゆる操作を実行できます。
     参加者はそのタスクの情報を参照することができ、期限が近づくと通知されます。
     また、グループを設定すると、そのグループメンバーは参加者でなくてもそのタスクを参照できます。
+    ■コマンド引数
     1: タスク名
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
     (3: 、か,区切りで参加者を指定。デフォルトは送信者。「全員」で参加グループ全員)
@@ -198,7 +218,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         new_task.save()
         reply = "「{}」タスクを作成し、期限を{}に設定しました。\n".format(
             task_name, task_deadline.strftime('%Y/%m/%d %H:%M:%S'))
-        reply += "■参加グループ\n{}\n".format("、".join(valid_group_name_list)
+        reply += "■関連グループ\n{}\n".format("、".join(valid_group_name_list)
                                         if valid_group_name_list else "なし")
         reply += "■参加者\n{}".format("、".join(valid_participant_name_list))
         return reply, error_list
