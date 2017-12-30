@@ -14,7 +14,7 @@ class Vocabulary(models.Model):
 class LineUser(models.Model):
     '''LINEのユーザーデータベース'''
     # UserID。LINEから取得
-    user_id = models.CharField(max_length=64, null=True)
+    user_id = models.CharField(max_length=64, null=True, unique=True)
     # UserName。LINEから取得
     name = models.CharField(max_length=64, null=True)
 
@@ -32,7 +32,7 @@ class User(models.Model):
         (UserAuthority.Watcher.name, UserAuthority.Watcher.name),
     )
     # ユーザー名。そのユーザー自身のみ設定可能
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=64, unique=True)
     # LINEのユーザー情報。そのユーザーのみ設定可能
     line_user = models.OneToOneField(
         LineUser, on_delete=models.SET_NULL, null=True)
@@ -46,7 +46,7 @@ class User(models.Model):
 class LineGroup(models.Model):
     '''LINEのグループデータベース'''
     # グループID。LINEから取得
-    group_id = models.CharField(max_length=64, null=True)
+    group_id = models.CharField(max_length=64, null=True, unique=True)
 
 
 class AsanaTeam(models.Model):
@@ -57,7 +57,7 @@ class AsanaTeam(models.Model):
 class Group(models.Model):
     '''グループデータベース'''
     # グループ名。グループ管理者のみ変更可能
-    name = models.CharField(max_length=64)
+    name = models.CharField(max_length=64, unique=True)
     # 管理者。グループ管理者のみ変更可能
     managers = models.ManyToManyField(User, related_name="managing_groups")
     # メンバー。グループ管理者のみ変更可能
