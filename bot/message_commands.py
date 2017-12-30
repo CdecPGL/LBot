@@ -67,7 +67,7 @@ def check_task_group_authority(command_source: CommandSource, task: Task):
 def check_task_edit_autority(command_source: CommandSource, task: Task):
     '''ユーザーにタスクの編集権限があるかどうか。
     Masterユーザーかタスク管理者ならあるとみなす。'''
-    return UserAuthority(command_source.user_data.authority) == UserAuthority.Master or task.managers.filter(id__exact=command_source.user_data.id).exists()
+    return UserAuthority[command_source.user_data.authority] == UserAuthority.Master or task.managers.filter(id__exact=command_source.user_data.id).exists()
 
 
 def check_task_watch_autority(command_source: CommandSource, task: Task):
