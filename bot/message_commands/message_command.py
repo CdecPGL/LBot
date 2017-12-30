@@ -19,6 +19,16 @@ class CommandSource(object):
 __command_map = {}
 
 
+def add_command_handler(command_name, authority):
+    '''コマンドハンドラを追加するデコレータ。
+    第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
+    返信がNoneの場合はコマンド失敗とみなす。'''
+    def decorator(func):
+        decorator.__doc__ = func.__doc__
+        __command_map[command_name] = (func, authority)
+    return decorator
+
+
 @add_command_handler("使い方", UserAuthority.Watcher)
 def help_command(command_source: CommandSource, target_command_name: str = None)->(str, [str]):
     '''使い方を表示します。コマンドの指定がない場合はコマンドの一覧を表示します。
@@ -41,16 +51,6 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
         reply += 'また、「使い方」コマンドにコマンド名を指定することでそのコマンドの詳細説明を表示します。\n'
         reply += '<コマンド一覧>\n' + "\n".join(command_list)
         return reply, []
-
-
-def add_command_handler(command_name, authority):
-    '''コマンドハンドラを追加するデコレータ。
-    第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
-    返信がNoneの場合はコマンド失敗とみなす。'''
-    def decorator(func):
-        decorator.__doc__ = func.__doc__
-        __command_map[command_name] = (func, authority)
-    return decorator
 
 
 def execute_command(command: str, command_source: CommandSource, params: [str]):
