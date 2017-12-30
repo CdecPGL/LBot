@@ -273,7 +273,8 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             task_name_deadline_list = [(task.name, task.deadline) for task in group.tasks.all(
             ) if check_task_watch_authority(command_source.user_data, task)]
             # 期限の近い順に並び替え
-            task_name_deadline_list.sort(key=lambda name, deadline: deadline)
+            task_name_deadline_list.sort(
+                key=lambda name_deadline: name_deadline[1])
             return "■グループ「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, deadline) for name, deadline in task_name_deadline_list])), []
         except GroupNotFoundError:
             return None, ["グループ「{}」が見つからなかった。".format(name)]
