@@ -49,7 +49,7 @@ def join_event_handler(event):
 
 @event_handler.add(linebot.models.MessageEvent, message=linebot.models.TextMessage)
 def text_message_handler(event):
-    '''テキストメッセージイベントのハンドラ'''
+    '''テキストメッセージを処理する'''
     class Reject(Exception):
         '''リジェクト例外'''
 
@@ -58,7 +58,6 @@ def text_message_handler(event):
             self.message = message
 
     try:
-        '''テキストメッセージを処理する'''
         message_text = util.unify_newline_code(event.message.text)
         # コマンドとパラメータの取得
         command_param = None
@@ -81,6 +80,7 @@ def text_message_handler(event):
         command = None
         params = []
         if command_param:
+            # 左右の空白は取り除く
             items = [item.strip() for item in command_param.split("\n")]
             print(items)
             # 文字列の長さが規定値を超えていたらリジェクト

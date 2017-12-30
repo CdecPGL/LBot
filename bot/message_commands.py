@@ -262,7 +262,12 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
-            return "■ユーザー「{}」のタスク一覧\n{}".format(name, "\n".join(["{}: {}".format(name, convert_datetime_to_string(deadline)) for name, deadline in task_name_deadline_list])), []
+            if task_name_deadline_list:
+                tasks_str = "\n".join(["{}: {}".format(name, convert_datetime_to_string(
+                    deadline)) for name, deadline in task_name_deadline_list])
+            else:
+                tasks_str = "なし"
+            return "■ユーザー「{}」のタスク一覧\n{}".format(name, tasks_str), []
         except UserNotFoundError:
             return None, ["ユーザー「{}」が見つからなかった。".format(name)]
 
@@ -275,7 +280,12 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
-            return "■グループ「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, convert_datetime_to_string(deadline)) for name, deadline in task_name_deadline_list])), []
+            if task_name_deadline_list:
+                tasks_str = "\n".join(["{}: {}".format(name, convert_datetime_to_string(
+                    deadline)) for name, deadline in task_name_deadline_list])
+            else:
+                tasks_str = "なし"
+            return "■グループ「{}」のタスク一覧\n{}".format(name, tasks_str), []
         except GroupNotFoundError:
             return None, ["グループ「{}」が見つからなかった。".format(name)]
 
@@ -496,8 +506,14 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
             repply += "■グループ名\n{}\n".format(group.name)
             repply += "■LINEグループ\n{}\n".format(
                 "あり" if group.line_group else "なし")
-            repply += "■Asanaチーム\n{}".format(
+            repply += "■Asanaチーム\n{}\n".format(
                 "あり" if group.asana_team else "なし")
+            if group.members.exists():
+                members_str = "、".join(
+                    [member.name for member in group.members.all()])
+            else:
+                members_str = "なし"
+            repply += "■メンバー\n{}".format(members_str)
             return repply, []
         else:
             return "グループ「{}」の閲覧権限がない。Master権限を持つユーザーか、グループの管理者と参加者のみ表示できる。".format(target_group_name)
