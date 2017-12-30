@@ -1,5 +1,7 @@
 '''返信生成関数群'''
 
+import random
+
 from bot.models import Vocabulary
 
 KNOW_BUT_LIST = ["は知ってるけど、", "は当たり前だね。でも",
