@@ -108,6 +108,11 @@ def check_group_watch_authority(user: User, group: Group):
         return group.members.filter(id=user.id).exists()
 
 
+def convert_datetime_to_string(date_time: datetime.datetime):
+    '''日時を文字列に変換する'''
+    return date_time.strftime('%Y/%m/%d %H:%M:%S')
+
+
 __command_map = {}
 
 
@@ -126,13 +131,9 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
     '''使い方を表示します。コマンドの指定がない場合はコマンドの一覧を表示します。
     ■コマンド引数
     (1: 使い方を見たいコマンド名)'''
-    # コマンド一覧の作成。各コマンドの説明文は一行目のみを取り出したもの
-    command_list = []
-    for command_name, (command_func, command_authority) in __command_map.items():
-        command_doc = inspect.getdoc(command_func)
-        simple_doc = command_doc.split("\n")[0] if command_doc else "未設定"
-        command_list.append("■{}(権限：{})\n{}".format(
-            command_name, command_authority.name, simple_doc))
+    # コマンド一覧の作成
+    command_list = ["■{}(権限：{})".format(command_name, command_authority.name)
+                    for command_name, (command_func, command_authority) in __command_map.items()]
     # ターゲットが指定されていたらそのコマンドの詳細を表示
     if target_command_name:
         if target_command_name in __command_map:
@@ -147,11 +148,6 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
         reply += 'また、「使い方」コマンドにコマンド名を指定することでそのコマンドの詳細説明を表示します。\n'
         reply += '<コマンド一覧>\n' + "\n".join(command_list)
         return reply, []
-
-
-def convert_datetime_to_string(date_time: datetime.datetime):
-    '''日時を文字列に変換する'''
-    return date_time.strftime('%Y/%m/%d %H:%M:%S')
 
 
 @add_command_handler("議事録開始", UserAuthority.Editor)
@@ -268,6 +264,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
 @add_command_handler("タスク列挙", UserAuthority.Watcher)
 def list_task_command(command_source: CommandSource, target: str = None, name: str = None)->(str, [str]):
     '''タスクの一覧を表示します。
+    Masterユーザー、タスクの参加者、タスクの関連グループのメンバーのみ閲覧可能です。
     ■コマンド引数
     (1: 「グループ」又は「ユーザー」。デフォルトは両方)
     (2: グループ又はユーザーの名前。デフォルトは送信者)'''
@@ -546,13 +543,25 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
         return None, ["グループ「{}」が見つからない。".format(target_group_name)]
 
 
-@add_command_handler("グループ編集", UserAuthority.Editor)
-def edit_group_command(command_source: CommandSource)->(str, [str]):
-    '''グループを編集をします(未実装)。
+@add_command_handler("グループ名変更", UserAuthority.Editor)
+def change_group_name_command(command_source: CommandSource, target_group_name: str, new_group_name: str)->(str, [str]):
+    '''グループ名を変更します。
     Editor権限以上のユーザーでないとグループ管理者にはなれません。
     グループ管理者がいなくなるような変更は行えません。
     Masterユーザーかグループの管理者のみ変更可能です。'''
-    return None, ["未実装"]
+    try:
+        group = db_util.get_group_by_name_from_database(target_group_name)
+        if check_group_edit_authority(command_source.user_data, group):
+            if Group.objects.filter(name=new_group_name).exists():
+                return None, ["グループ名「{}」はすでに存在するっ！".format(target_group_name)]
+            else:
+                group.name = new_group_name
+                group.save()
+                return "グループ「{}」の名前を「{}」に変更しました。".format(target_group_name, new_group_name), []
+        else:
+            return None, ["グループ「{}」の変更権限がない！　グループの変更はMasterユーザーか管理者にしかできないっ！".format(target_group_name)]
+    except GroupNotFoundError:
+        return None, ["グループ「{}」はないっっっ！".format(target_group_name)]
 
 
 def execute_command(command: str, command_source: CommandSource, params: [str]):
