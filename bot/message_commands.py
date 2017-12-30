@@ -485,7 +485,7 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
             group = db_util.get_group_by_name_from_database(target_group_name)
         else:
             if command_source.group_data:
-                group = command_source.user_group
+                group = command_source.group_data
                 target_group_name = "ここのグループ"
             else:
                 return None, ["ここはグループじゃないのでグループ名を指定してね。"]
