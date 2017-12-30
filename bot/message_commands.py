@@ -84,7 +84,7 @@ def check_group_watch_authority(user: User, group: Group):
     if check_group_edit_authority(user, group):
         return True
     else:
-        return False
+        return group.members.filter(id=user.id).exists()
 
 
 __command_map = {}
