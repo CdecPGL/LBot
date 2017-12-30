@@ -57,6 +57,64 @@ def generate_random_reply(text: str)->str:
         return text + random.choice(UNKNOW_BUT_LIST) + reply + random.choice(RANDOM_REPLY_SUFIX_LIST)
 
 
+def check_task_group_authority(command_source: CommandSource, task: Task):
+    '''グループにタスクの編集閲覧権限があるかどうか。
+    タスクの関連グループに含まれていたら権限があるとみなす。
+    グループが発信元でない場合は常に権限があるとみなす。'''
+    return not command_source.group_data or task.groups.filter(id_exact=command_source.group_data.id).exists()
+
+
+def check_task_edit_autority(command_source: CommandSource, task: Task):
+    '''ユーザーにタスクの編集権限があるかどうか。
+    Masterユーザーかタスク管理者ならあるとみなす。'''
+    return UserAuthority(command_source.user_data.authority) == UserAuthority.Master or task.managers.filter(id__exact=command_source.user_data.id).exists()
+
+
+def check_task_watch_autority(command_source: CommandSource, task: Task):
+    '''ユーザーにタスクの閲覧権限があるかどうか。
+    編集権限を持っているか、参加者であるか、関連グループのメンバーなら権限があるとみなす。'''
+    if check_task_edit_autority(command_source, task):
+        return True
+    else:
+        return False
+
+
+def check_task_group_edit_authority(command_source: CommandSource, task: Task):
+    '''タスクの編集権限があるかどうかを確認する。
+    グループが発信元の場合は、タスクの関連グループに含まれている必要がある。
+    加えて、発信元ユーザーがMasterユーザーであるか、タスクの管理者であるならTrueを返す。'''
+    has_group_authority = check_task_group_authority(command_source, task)
+    has_edit_authority = check_task_edit_autority(command_source, task)
+    if has_group_authority:
+        if has_edit_authority:
+            return True
+        else:
+            return False, "編集権限がありません。コマンドの実行者がMasterユーザーかタスク管理者である必要があります。"
+    else:
+        if has_edit_authority:
+            return False, "このグループはタスクの関連グループに含まれていません。個人ラインならコマンドを実行できます。"
+        else:
+            return False, "このグループはタスクの関連グループに含まれていません。"
+
+
+def check_task_group_watch_authority(command_source: CommandSource, task: Task):
+    '''タスクの閲覧権限があるかどうかを確認する。
+    グループが発信元の場合は、タスクの関連グループに含まれている必要がある。
+    タスクの編集権限を持っているか、タスクの参加者か、タスクの関連グループのメンバーである場合にはTrueを返す。'''
+    has_group_authority = check_task_group_authority(command_source, task)
+    has_watch_authority = check_task_watch_autority(command_source, task)
+    if has_group_authority:
+        if has_watch_authority:
+            return True
+        else:
+            return False, "閲覧権限がありません。コマンドの実行者がMasterユーザーかタスクの管理者、参加者、関連グループのメンバーのいずれかである必要があります。"
+    else:
+        if has_watch_authority:
+            return False, "このグループはタスクの関連グループに含まれていません。個人ラインならコマンドを実行できます。"
+        else:
+            return False, "このグループはタスクの関連グループに含まれていません。"
+
+
 __command_map = {}
 
 
@@ -213,7 +271,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
 
 
 @add_command_handler("タスク列挙", UserAuthority.Watcher)
-def list_task_command(command_source: CommandSource, target: str = None, name: str = None)->(str, [str]):
+def list_task_command(command_source: CommandSource, target: str = None, name: str)->(str, [str]):
     '''タスクの一覧を表示します(未実装)。
     ■コマンド引数
     1: タスク名又はタスク短縮名。タスク名を優先して検索されます'''
@@ -223,34 +281,61 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
 @add_command_handler("タスク詳細", UserAuthority.Watcher)
 def check_task_command(command_source: CommandSource, target_task_name: str)->(str, [str]):
     '''タスクの詳細を表示します。
+    グループラインの場合はそのグループがタスクの関連グループに含まれていることを条件とし、Masterユーザー、タスクの参加者、タスクの関連グループのメンバーのみ表示可能です。
     ■コマンド引数
     1: タスク名又はタスク短縮名'''
     try:
         task = db_util.get_task_by_name_or_shot_name_from_database(
             target_task_name)
-        if task.managers.filter(id__exact=command_source.user_data.id).exists():
-            task.delete()
-            return "タスク「{}」を削除しました。".format(target_task_name), []
+        # Masterユーザー、管理者、参加者、関連グループのメンバーのみ閲覧可能
+        has_authority, authority_error = check_task_group_watch_authority(
+            command_source, task)
+        if has_authority:
+            reply = "<タスク「{}」詳細>\n".format(target_task_name)
+            reply += "■短縮名\n{}\n".format(
+                task.short_name if task.short_name else "未設定")
+            reply += "■期限\n{}\n".format(
+                task.deadline.strftime('%Y/%m/%d %H:%M:%S'))
+            # 参加者
+            if task.is_participate_all_in_groups:
+                participants_str = "関連グループの全員"
+            elif task.participants.exists():
+                participants_str = ",".join(
+                    [participant.name for participant in task.participants])
+            else:
+                participants_str = "なし"
+            reply += "■参加者\n{}\n".format(participants_str)
+            # 関連グループ
+            if task.groups.exists():
+                groups_str = ",".join(
+                    [group.name for group in task.groups])
+            else:
+                groups_str = "なし"
+            reply += "■関連グループ\n{}\n".format(groups_str)
+            return reply, []
         else:
-            return None, ["タスク「{}」の管理者でないから削除できないよー。".format(target_task_name)]
+            return None, [authority_error]
     except TaskNotFoundError:
         return None, ["タスク「{}」が見つからない！".format(target_task_name)]
-    return None, ["未実装"]
 
 
 @add_command_handler("タスク削除", UserAuthority.Editor)
 def remove_task_command(command_source: CommandSource, target_task_name)->(str, [str]):
     '''タスクを削除します。
+    グループラインの場合はそのグループがタスクの関連グループに含まれていることを条件とし、Masterユーザー、タスクの管理者のみ削除可能です。
     ■コマンド引数
     1: タスク名又はタスク短縮名'''
     try:
         task = db_util.get_task_by_name_or_shot_name_from_database(
             target_task_name)
-        if task.managers.filter(id__exact=command_source.user_data.id).exists():
+        # Masterユーザーか、そのタスクの管理者のみ削除可能
+        has_authority, authority_error = check_task_group_edit_authority(
+            command_source, task)
+        if has_authority:
             task.delete()
             return "タスク「{}」を削除しました。".format(target_task_name), []
         else:
-            return None, ["タスク「{}」の管理者でないから削除できないよー。".format(target_task_name)]
+            return None, [authority_error]
     except TaskNotFoundError:
         return None, ["タスク「{}」が見つからない！".format(target_task_name)]
 
@@ -260,7 +345,8 @@ def edit_task_command(command_source: CommandSource)->(str, [str]):
     '''タスクを編集をします(未実装)。
     Editor権限以上のユーザーでないとタスク管理者にはなれません。
     タスク管理者がいなくなるような変更は行えません。
-    タスクの短縮名は全てタスク名、他のタスク短縮名と重複することはできません。'''
+    タスクの短縮名は全てタスク名、他のタスク短縮名と重複することはできません。
+    Masterユーザーかタスクの管理者のみ変更可能です。'''
     return None, ["未実装"]
 
 
