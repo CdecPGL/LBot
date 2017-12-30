@@ -57,62 +57,34 @@ def generate_random_reply(text: str)->str:
         return text + random.choice(UNKNOW_BUT_LIST) + reply + random.choice(RANDOM_REPLY_SUFIX_LIST)
 
 
-def check_task_group_authority(command_source: CommandSource, task: Task):
-    '''グループにタスクの編集閲覧権限があるかどうか。
-    タスクの関連グループに含まれていたら権限があるとみなす。
-    グループが発信元でない場合は常に権限があるとみなす。'''
-    return not command_source.group_data or task.groups.filter(id__exact=command_source.group_data.id).exists()
-
-
-def check_task_edit_autority(command_source: CommandSource, task: Task):
+def check_task_edit_authority(user: User, task: Task):
     '''ユーザーにタスクの編集権限があるかどうか。
     Masterユーザーかタスク管理者ならあるとみなす。'''
-    return UserAuthority[command_source.user_data.authority] == UserAuthority.Master or task.managers.filter(id__exact=command_source.user_data.id).exists()
+    return UserAuthority[user.authority] == UserAuthority.Master or task.managers.filter(id__exact=user.id).exists()
 
 
-def check_task_watch_autority(command_source: CommandSource, task: Task):
+def check_task_watch_authority(user: User, task: Task):
     '''ユーザーにタスクの閲覧権限があるかどうか。
     編集権限を持っているか、参加者であるか、関連グループのメンバーなら権限があるとみなす。'''
-    if check_task_edit_autority(command_source, task):
+    if check_task_edit_authority(user, task):
         return True
     else:
         return False
 
 
-def check_task_group_edit_authority(command_source: CommandSource, task: Task)->(bool, str):
-    '''タスクの編集権限があるかどうかを確認する。
-    グループが発信元の場合は、タスクの関連グループに含まれている必要がある。
-    加えて、発信元ユーザーがMasterユーザーであるか、タスクの管理者であるならTrueを返す。'''
-    has_group_authority = check_task_group_authority(command_source, task)
-    has_edit_authority = check_task_edit_autority(command_source, task)
-    if has_group_authority:
-        if has_edit_authority:
-            return True, None
-        else:
-            return False, "編集権限がありません。コマンドの実行者がMasterユーザーかタスク管理者である必要があります。"
-    else:
-        if has_edit_authority:
-            return False, "このグループはタスクの関連グループに含まれていません。個人ラインならコマンドを実行できます。"
-        else:
-            return False, "このグループはタスクの関連グループに含まれていません。"
+def check_group_edit_authority(user: User, group: Group):
+    '''ユーザーにグループの編集権限があるかどうか。
+    Masterユーザーかグループ管理者ならあるとみなす。'''
+    return UserAuthority[user.authority] == UserAuthority.Master or group.managers.filter(id__exact=user.id).exists()
 
 
-def check_task_group_watch_authority(command_source: CommandSource, task: Task)->(bool, str):
-    '''タスクの閲覧権限があるかどうかを確認する。
-    グループが発信元の場合は、タスクの関連グループに含まれている必要がある。
-    タスクの編集権限を持っているか、タスクの参加者か、タスクの関連グループのメンバーである場合にはTrueを返す。'''
-    has_group_authority = check_task_group_authority(command_source, task)
-    has_watch_authority = check_task_watch_autority(command_source, task)
-    if has_group_authority:
-        if has_watch_authority:
-            return True, None
-        else:
-            return False, "閲覧権限がありません。コマンドの実行者がMasterユーザーかタスクの管理者、参加者、関連グループのメンバーのいずれかである必要があります。"
+def check_group_watch_authority(user: User, group: Group):
+    '''ユーザーにグループの閲覧権限があるかどうか。
+    編集権限を持っているか、参加者であるならあるとみなす。'''
+    if check_group_edit_authority(user, group):
+        return True
     else:
-        if has_watch_authority:
-            return False, "このグループはタスクの関連グループに含まれていません。個人ラインならコマンドを実行できます。"
-        else:
-            return False, "このグループはタスクの関連グループに含まれていません。"
+        return False
 
 
 __command_map = {}
@@ -161,8 +133,6 @@ def convert_datetime_to_string(date_time: datetime.datetime):
     return date_time.strftime('%Y/%m/%d %H:%M:%S')
 
 
-@add_command_handler("ユーザー確認", UserAuthority.Watcher)
-@add_command_handler("ユーザー編集", UserAuthority.Watcher)
 @add_command_handler("グループ編集", UserAuthority.Watcher)
 @add_command_handler("議事録開始", UserAuthority.Editor)
 @add_command_handler("議事録終了", UserAuthority.Editor)
@@ -287,7 +257,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             user = db_util.get_user_by_name_from_database(name)
             # ユーザーの参加タスク
             task_name_deadline_list = [(task.name, task.datetime) for task in user.belonging_tasks.all(
-            ) if check_task_group_watch_authority(command_source, task)[0]]
+            ) if check_task_watch_authority(command_source.user_data, task)]
             # 参加しているグループで全員指定されている
 
             # 期限の近い順に並び替え
@@ -301,7 +271,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
         try:
             group = db_util.get_group_by_name_from_database(name)
             task_name_deadline_list = [(task.name, task.deadline) for task in group.tasks.all(
-            ) if check_task_group_watch_authority(command_source, task)[0]]
+            ) if check_task_watch_authority(command_source.user_data, task)]
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(key=lambda name, deadline: deadline)
             return "■グループ「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, deadline) for name, deadline in task_name_deadline_list])), []
@@ -333,16 +303,14 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
 @add_command_handler("タスク詳細", UserAuthority.Watcher)
 def check_task_command(command_source: CommandSource, target_task_name: str)->(str, [str]):
     '''タスクの詳細を表示します。
-    グループラインの場合はそのグループがタスクの関連グループに含まれていることを条件とし、Masterユーザー、タスクの参加者、タスクの関連グループのメンバーのみ表示可能です。
+    Masterユーザー、タスクの参加者、タスクの関連グループのメンバーのみ表示可能です。
     ■コマンド引数
     1: タスク名又はタスク短縮名'''
     try:
         task = db_util.get_task_by_name_or_shot_name_from_database(
             target_task_name)
         # Masterユーザー、管理者、参加者、関連グループのメンバーのみ閲覧可能
-        has_authority, authority_error = check_task_group_watch_authority(
-            command_source, task)
-        if has_authority:
+        if check_task_watch_authority(command_source.user_data, task):
             reply = "<タスク詳細>\n"
             reply += "■名前\n{}\n".format(target_task_name)
             reply += "■短縮名\n{}\n".format(
@@ -367,7 +335,7 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
             reply += "■関連グループ\n{}".format(groups_str)
             return reply, []
         else:
-            return None, [authority_error]
+            return None, ["タスクの閲覧権限がありません。タスクの閲覧はMasterユーザー、タスクの参加者、タスクの関連グループのメンバーのみ可能でーす。"]
     except TaskNotFoundError:
         return None, ["タスク「{}」が見つからない！".format(target_task_name)]
 
@@ -375,20 +343,18 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
 @add_command_handler("タスク削除", UserAuthority.Editor)
 def remove_task_command(command_source: CommandSource, target_task_name)->(str, [str]):
     '''タスクを削除します。
-    グループラインの場合はそのグループがタスクの関連グループに含まれていることを条件とし、Masterユーザー、タスクの管理者のみ削除可能です。
+    Masterユーザー、タスクの管理者のみ削除可能です。
     ■コマンド引数
     1: タスク名又はタスク短縮名'''
     try:
         task = db_util.get_task_by_name_or_shot_name_from_database(
             target_task_name)
         # Masterユーザーか、そのタスクの管理者のみ削除可能
-        has_authority, authority_error = check_task_group_edit_authority(
-            command_source, task)
-        if has_authority:
+        if check_task_edit_authority(command_source.user_data, task):
             task.delete()
             return "タスク「{}」を削除しました。".format(target_task_name), []
         else:
-            return None, [authority_error]
+            return None, ["タスクの編集権限がありません。タスクの編集は Masterユーザー、タスクの管理者のみ可能ですー。"]
     except TaskNotFoundError:
         return None, ["タスク「{}」が見つからない！".format(target_task_name)]
 
@@ -403,11 +369,65 @@ def edit_task_command(command_source: CommandSource)->(str, [str]):
     return None, ["未実装"]
 
 
+@add_command_handler("ユーザー名変更", UserAuthority.Editor)
+def change_user_name_command(command_source: CommandSource, target_user_name: str, new_user_name: str):
+    '''ユーザーの詳細を表示します。
+    Master権限を持つユーザーか、本人のみ実行できます。
+    ■コマンド引数
+    1: 対象ユーザー名
+    2: 新しいユーザー名'''
+    if command_source.user_data.name == target_user_name:
+        target_user = command_source.user_data
+    elif UserAuthority[command_source.user_data.authority] == UserAuthority.Master:
+        target_user = db_util.get_user_by_name_from_database(target_user_name)
+    else:
+        return None, ["ユーザ名は本人かMasterユーザーにしか変更できないんだよね。"]
+    if User.objects.filter(name=new_user_name).exists():
+        return None, ["ユーザー名「{}」は別の人が使ってるよ".format(new_user_name)]
+    old_name = target_user_name.name
+    target_user_name.name = new_user_name
+    target_user_name.save()
+    return "ユーザー「{}」の名前を「{}」に変更しましたよ。".format(old_name, new_user_name), []
+
+
+@add_command_handler("誰", UserAuthority.Watcher)
+def check_user_command(command_source: CommandSource, target_user_name: str = None):
+    '''ユーザーの情報を表示します。
+    Master権限を持つユーザーか、本人のみ表示できます。
+    コマンド引数
+    (1: 対象のユーザー名。デフォルトは送信者)'''
+    # 権限確認
+    if command_source.user_data.name != target_user_name and UserAuthority[command_source.user_data] != UserAuthority.Master:
+        return None, ["ユーザ情報は本人かMasterユーザーにしか表示できないんだよね。"]
+    try:
+        if target_user_name:
+            user = db_util.get_user_by_name_from_database(target_user_name)
+        else:
+            user = command_source.user_data
+        repply = "<ユーザー情報>\n"
+        repply += "■ユーザー名\n{}\n".format(user.name)
+        repply += "■権限\n{}\n".format(user.authority)
+        repply += "■LINEユーザー\n{}\n".format(
+            user.line_user.name if user.line_user else "なし")
+        repply += "■Asanaユーザー\n{}\n".format(
+            user.asana_user.name if user.asana_user else "なし")
+        repply += "■管理グループ\n{}\n".format(
+            "、".join([group.name for group in user.managing_groups.all()]))
+        repply += "■管理タスク\n{}\n".format(
+            "、".join([task.name for task in user.managing_tasks.all()]))
+        repply += "■参加グループ\n{}\n".format(
+            "、".join([group.name for group in user.belonging_groups.all()]))
+        repply += "■参加タスク\n{}\n".format("未実装")
+        return repply, []
+    except UserNotFoundError:
+        return None, ["ユーザー「{}」はいないっぽい。".format(target_user_name)]
+
+
 @add_command_handler("ユーザー権限変更", UserAuthority.Master)
-def change_user_authority(command_source: CommandSource, target_user_name: str, target_authority: str):
+def change_user_authority_command(command_source: CommandSource, target_user_name: str, target_authority: str):
     '''ユーザーの権限を変更します。
     Master権限を持つユーザーがいなくなるような変更は行えません。
-    管理しているタスクがあるユーザーをWatcher権限にすることはできません。
+    管理しているタスクかグループがあるユーザーをWatcher権限にすることはできません。
     ■コマンド引数
     1: 対象のユーザー名
     2: 権限。「Master」、「Editor」、「Watcher」のいずれか'''
@@ -425,16 +445,57 @@ def change_user_authority(command_source: CommandSource, target_user_name: str, 
         if current_authority == UserAuthority.Master:
             if User.objects.filter(authority__exact=UserAuthority.Master.name).count() == 1:
                 return None, ["Masterユーザーがいなくなっちゃうよ。"]
-        # 管理タスクがないか確認
+        # 管理タスクとグループの確認
         if target_authority == UserAuthority.Watcher:
             if user.managing_tasks.exists():
                 return [None, "ユーザー「{}」には管理しているタスクがあるので「{}」権限には変更できないよ。".format(target_user_name, UserAuthority.Watcher.name)]
+            if user.managing_groups.exists():
+                return [None, "ユーザー「{}」には管理しているグループがあるので「{}」権限には変更できないよ。".format(target_user_name, UserAuthority.Watcher.name)]
         # 権限変更
         user.authority = target_authority.name
         user.save()
         return "ユーザー「{}」の権限を「{}」から「{}」に変更したよ。".format(target_user_name, current_authority.name, target_authority.name), []
     except UserNotFoundError:
         return None, ["指定されたユーザー「{}」はいないよ。".format(target_user_name)]
+
+
+@add_command_handler("どこ", UserAuthority.Watcher)
+def check_group_command(command_source: CommandSource, target_group_name: str = None):
+    '''グループの情報を表示します。
+    Master権限を持つユーザーか、グループの管理者と参加者のみ表示できます。
+    グループからコマンドを実行した場合はそのグループの情報しか見られません。
+    コマンド引数
+    (1: 対象のグループ名。デフォルトは送信グループ)'''
+    try:
+        if target_group_name:
+            group = db_util.get_group_by_name_from_database(target_group_name)
+        else:
+            if command_source.group_data:
+                group = command_source.user_group
+                target_group_name = "ここのグループ"
+            else:
+                return None, ["ここはグループじゃないのでグループ名を指定してね。"]
+        if check_group_watch_authority(command_source.user_data, group):
+            repply = "<グループ情報>\n"
+            repply += "■グループ名\n{}\n".format(group.name)
+            repply += "■LINEグループ\n{}\n".format(
+                "あり" if group.line_group else "なし")
+            repply += "■Asanaチーム\n{}\n".format(
+                "あり" if group.asana_team else "なし")
+            return repply, []
+        else:
+            return "グループ「{}」の閲覧権限がない。Master権限を持つユーザーか、グループの管理者と参加者のみ表示できる。".format(target_group_name)
+    except GroupNotFoundError:
+        return None, ["グループ「{}」が見つからない。".format(target_group_name)]
+
+
+@add_command_handler("グループ編集", UserAuthority.Editor)
+def edit_group_command(command_source: CommandSource)->(str, [str]):
+    '''グループを編集をします(未実装)。
+    Editor権限以上のユーザーでないとグループ管理者にはなれません。
+    グループ管理者がいなくなるような変更は行えません。
+    Masterユーザーかグループの管理者のみ変更可能です。'''
+    return None, ["未実装"]
 
 
 def execute_command(command: str, command_source: CommandSource, params: [str]):
