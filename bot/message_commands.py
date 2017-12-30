@@ -108,13 +108,15 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
             return "「{}」コマンドは存在しません。\n<コマンド一覧>\n{}".format(target_command_name, "\n".join(command_list)), []
     # 指定されていなかったらコマンドリストを表示
     else:
-        return '「使い方」コマンドにコマンド名を指定することで、そのコマンドの詳細説明を表示します。\n<コマンド一覧>\n' + "\n".join(command_list), []
+        reply = 'グループの場合は「#」を先頭に付けて、個人ラインの場合は何も付けずに、コマンドを指定して実行することができます。\n'
+        reply += 'コマンドでない文字列を指定した場合はてきとうな返事を返します。'
+        reply += 'また、「使い方」コマンドにコマンド名を指定することでそのコマンドの詳細説明を表示します。\n'
+        reply += '<コマンド一覧>\n' + "\n".join(command_list)
+        return reply, []
 
 
-@add_command_handler("タスク編集", UserAuthority.Watcher)
 @add_command_handler("ユーザー確認", UserAuthority.Watcher)
 @add_command_handler("ユーザー編集", UserAuthority.Watcher)
-@add_command_handler("ユーザー権限変更", UserAuthority.Master)
 @add_command_handler("グループ編集", UserAuthority.Watcher)
 @add_command_handler("議事録開始", UserAuthority.Editor)
 @add_command_handler("議事録終了", UserAuthority.Editor)
@@ -149,7 +151,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     ■コマンド引数
     1: タスク名
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
-    (3: 、か,区切りで参加者を指定。デフォルトは送信者。「全員」で参加グループ全員)
+    (3: 、か,区切りで参加者を指定。デフォルトは送信者。「全員」で関連グループ全員を指定。ただし「全員」と個別指定は併用不可)
     (4: 、か,区切りで参加グループを指定。デフォルトは送信元グループ)'''
     # すでに同名のタスクがないか確認
     if Task.objects.filter(name__exact=task_name).count():
@@ -193,7 +195,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         if participants == EVERYONE_WORD:
             if valid_group_name_list:
                 new_task.is_participate_all_in_groups = True
-                valid_participant_name_list.append("指定グループの全員")
+                valid_participant_name_list.append("関連グループの全員")
             else:
                 new_task.delete()
                 return None, ["参加者にグループメンバー全員が指定されたけど、グループが指定されてないよ。。。"]
@@ -228,15 +230,53 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
 
 
 @add_command_handler("タスク確認", UserAuthority.Watcher)
-def check_task_command(command_source: CommandSource)->(str, [str]):
-    '''タスク確認コマンド'''
-    pass
+def check_task_command(command_source: CommandSource, target: str = None, name: str = None)->(str, [str]):
+    '''タスクを確認します'''
+    return None, ["未実装"]
 
 
-@add_command_handler("タスク削除", UserAuthority.Watcher)
+@add_command_handler("タスク削除", UserAuthority.Editor)
 def remove_task_command(command_source: CommandSource)->(str, [str]):
-    '''タスク削除コマンド'''
-    pass
+    '''タスクを削除します。'''
+    return None, ["未実装"]
+
+
+@add_command_handler("タスク編集", UserAuthority.Editor)
+def edit_task_command(command_source: CommandSource)->(str, [str]):
+    '''タスクを編集をします。
+    Editor権限以上のユーザーでないとタスク管理者にはなれません。
+    タスク管理者がいなくなるような変更は行えません。'''
+    return None, ["未実装"]
+
+
+@add_command_handler("ユーザー権限変更", UserAuthority.Master)
+def change_user_authority(command_source: CommandSource, target_user_name: str, target_authority: str):
+    '''ユーザーの権限を変更します。
+    Master権限を持つユーザーがいなくなるような変更は行えません。
+    管理しているタスクがあるユーザーをWatcher権限にすることはできません。'''
+    try:
+        user = get_user_by_name_from_database(target_user_name)
+        if target_authority not in UserAuthority:
+            return None, ["指定された権限「{}」は存在しないよ。".format(target_authority)]
+        current_authority = UserAuthority[user.authority]
+        target_authority = UserAuthority[target_authority]
+        # 変更の必要があるか確認
+        if current_authority == target_authority:
+            return "変更は必要ないよ。", []
+        # Masterユーザーの数を確認
+        if current_authority == UserAuthority.Master:
+            if User.objects.filter(authority_exact=UserAuthority.Master.name).count() == 1:
+                return None, ["Masterユーザーがいなくなっちゃうよ。"]
+        # 管理タスクがないか確認
+        if target_authority == UserAuthority.Watcher:
+            if user.managing_tasks.count() > 0:
+                return [None, "ユーザー「{}」には管理しているタスクがあるので「{}」権限には変更できないよ。".format(target_user_name, UserAuthority.Watcher.name)]
+        # 権限変更
+        user.authority = target_authority.name
+        user.save()
+        return "ユーザー「{}」の権限を「{}」から「{}」に変更したよ。".format(target_user_name, current_authority.name, target_authority.name), []
+    except UserNotFoundError:
+        return None, ["指定されたユーザー「{}」はいないよ。".format(target_user_name)]
 
 
 def execute_command(command: str, command_source: CommandSource, params: [str]):
