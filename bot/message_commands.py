@@ -83,10 +83,10 @@ def check_task_watch_authority(user: User, task: Task):
 def get_up_user_belonging_tasks(user: User):
     '''ユーザーが参加しているタスクを取得する'''
     # ユーザーの参加タスク
-    belonging_tasks = list(user.belonging_tasks.all())
+    belonging_tasks = user.belonging_tasks.all()
     # 参加しているグループで全員指定されているタスク
-    belonging_tasks.append(list(Task.objects.filter(
-        groups__members__id=user.id, is_participate_all_in_groups=True).all()))
+    belonging_tasks += Task.objects.filter(
+        groups__members__id=user.id, is_participate_all_in_groups=True).all()
     return belonging_tasks
 
 
