@@ -49,6 +49,14 @@ def join_event_handler(event):
 
 @event_handler.add(linebot.models.MessageEvent, message=linebot.models.TextMessage)
 def text_message_handler(event):
+    '''テキストメッセージイベントのハンドラ'''
+    class Reject(Exception):
+        '''リジェクト例外'''
+
+        def __init__(self, message: str):
+            super(Reject, self).__init__()
+            self.message = message
+
     try:
         '''テキストメッセージを処理する'''
         message_text = util.unify_newline_code(event.message.text)
@@ -60,17 +68,15 @@ def text_message_handler(event):
             # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
             # メッセージがコマンド開始文字列と全く同じ場合はリジェクト
             if any([command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text == command_trigger]):
-                line_settings.api.reply_message(
-                    event.reply_token,
-                    linebot.models.TextSendMessage(text="なんか言いたまへ(@_@)"))
-                return
+                raise Reject("なんか言いたまへ(@_@)")
+
             hit_command_trigger_list = [
                 command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
             if hit_command_trigger_list:
                 command_param = message_text[len(hit_command_trigger_list[0]):]
         else:
             sys.stderr.write('送信元"{}"には対応していません。\n'.format(event.source.type))
-            return
+            raise Reject("グループラインか個人ラインで話そう、、、")
 
         # コマンドとパラメータの抽出
         command = None
@@ -80,16 +86,10 @@ def text_message_handler(event):
             print(items)
             # 文字列の長さが規定値を超えていたらリジェクト
             if any([len(item) > SENTENCE_MAX_LENGTH for item in items]):
-                line_settings.api.reply_message(
-                    event.reply_token,
-                    linebot.models.TextSendMessage(text="長文は受け付けません(´ε｀ )"))
-                return
+                raise Reject("長文は受け付けません(´ε｀ )")
             # コマンド文字列が空だったらリジェクト
             if not items or not items[0]:
-                line_settings.api.reply_message(
-                    event.reply_token,
-                    linebot.models.TextSendMessage(text="もうちょっと喋って？"))
-                return
+                raise Reject("もうちょっと喋って？")
             command = items[0]
             if len(items) > 1:
                 params = items[1:]
@@ -123,6 +123,11 @@ def text_message_handler(event):
             line_settings.api.reply_message(
                 event.reply_token,
                 linebot.models.TextSendMessage(text=reply))
+    except Reject as reject:
+        line_settings.api.reply_message(
+            event.reply_token,
+            linebot.models.TextSendMessage(text=reject.message))
+        return
     except Exception:
         try:
             line_settings.api.reply_message(
