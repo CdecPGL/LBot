@@ -260,7 +260,8 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             # 参加しているグループで全員指定されている
 
             # 期限の近い順に並び替え
-            task_name_deadline_list.sort(key=lambda name, deadline: deadline)
+            task_name_deadline_list.sort(
+                key=lambda name_deadline: name_deadline[1])
             return "■ユーザー「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, deadline) for name, deadline in task_name_deadline_list])), []
         except UserNotFoundError:
             return None, ["ユーザー「{}」が見つからなかった。".format(name)]
