@@ -409,12 +409,28 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
             user.line_user.name if user.line_user else "なし")
         repply += "■Asanaユーザー\n{}\n".format(
             user.asana_user.name if user.asana_user else "なし")
-        repply += "■管理グループ\n{}\n".format(
-            "、".join([group.name for group in user.managing_groups.all()]))
-        repply += "■管理タスク\n{}\n".format(
-            "、".join([task.name for task in user.managing_tasks.all()]))
-        repply += "■参加グループ\n{}\n".format(
-            "、".join([group.name for group in user.belonging_groups.all()]))
+        # 管理グループ
+        if user.managing_groups.exists():
+            managing_groups_str = "、".join(
+                [group.name for group in user.managing_groups.all()])
+        else:
+            managing_groups_str = "なし"
+        repply += "■管理グループ\n{}\n".format(managing_groups_str)
+        # 管理タスク
+        if user.managing_tasks.exists():
+            managing_tasks_str = "、".join(
+                [task.name for task in user.managing_tasks.all()])
+        else:
+            managing_tasks_str = "なし"
+        repply += "■管理タスク\n{}\n".format(managing_tasks_str)
+        # 参加グループ
+        if user.belonging_groups.exists():
+            belonging_groups_str = "、".join(
+                [group.name for group in user.belonging_groups.all()])
+        else:
+            belonging_groups_str = "なし"
+        repply += "■参加グループ\n{}\n".format(belonging_groups_str)
+        # 参加タスク
         repply += "■参加タスク\n{}\n".format("未実装")
         return repply, []
     except UserNotFoundError:
