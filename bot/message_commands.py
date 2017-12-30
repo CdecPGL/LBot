@@ -83,10 +83,10 @@ def check_task_watch_authority(user: User, task: Task):
 def get_up_user_belonging_tasks(user: User):
     '''ユーザーが参加しているタスクを取得する'''
     # ユーザーの参加タスク
-    belonging_tasks = user.belonging_tasks.all()
+    belonging_tasks = user.belonging_tasks
     # 参加しているグループで全員指定されているタスク
     belonging_tasks = belonging_tasks | Task.objects.filter(
-        groups__members__id=user.id, is_participate_all_in_groups=True).all()
+        groups__members__id=user.id, is_participate_all_in_groups=True)
     return belonging_tasks
 
 
@@ -273,7 +273,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             '''指定ユーザーのタスクをリストアップする'''
             user = db_util.get_user_by_name_from_database(name)
             task_name_deadline_list = [(task.name, task.deadline) for task in get_up_user_belonging_tasks(
-                user) if check_task_watch_authority(user, task)]
+                user).all() if check_task_watch_authority(user, task)]
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
