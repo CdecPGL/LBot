@@ -79,7 +79,7 @@ def check_task_watch_autority(command_source: CommandSource, task: Task):
         return False
 
 
-def check_task_group_edit_authority(command_source: CommandSource, task: Task):
+def check_task_group_edit_authority(command_source: CommandSource, task: Task)->(bool, str):
     '''タスクの編集権限があるかどうかを確認する。
     グループが発信元の場合は、タスクの関連グループに含まれている必要がある。
     加えて、発信元ユーザーがMasterユーザーであるか、タスクの管理者であるならTrueを返す。'''
@@ -87,7 +87,7 @@ def check_task_group_edit_authority(command_source: CommandSource, task: Task):
     has_edit_authority = check_task_edit_autority(command_source, task)
     if has_group_authority:
         if has_edit_authority:
-            return True
+            return True, None
         else:
             return False, "編集権限がありません。コマンドの実行者がMasterユーザーかタスク管理者である必要があります。"
     else:
@@ -97,7 +97,7 @@ def check_task_group_edit_authority(command_source: CommandSource, task: Task):
             return False, "このグループはタスクの関連グループに含まれていません。"
 
 
-def check_task_group_watch_authority(command_source: CommandSource, task: Task):
+def check_task_group_watch_authority(command_source: CommandSource, task: Task)->(bool, str):
     '''タスクの閲覧権限があるかどうかを確認する。
     グループが発信元の場合は、タスクの関連グループに含まれている必要がある。
     タスクの編集権限を持っているか、タスクの参加者か、タスクの関連グループのメンバーである場合にはTrueを返す。'''
@@ -105,7 +105,7 @@ def check_task_group_watch_authority(command_source: CommandSource, task: Task):
     has_watch_authority = check_task_watch_autority(command_source, task)
     if has_group_authority:
         if has_watch_authority:
-            return True
+            return True, None
         else:
             return False, "閲覧権限がありません。コマンドの実行者がMasterユーザーかタスクの管理者、参加者、関連グループのメンバーのいずれかである必要があります。"
     else:
