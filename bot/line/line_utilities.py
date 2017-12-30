@@ -16,7 +16,7 @@ def get_user_by_line_user_id_from_database(line_user_id):
 
 
 def get_group_by_line_group_id_from_database(line_group_id):
-    '''LINEのグループIDでデータベースからグループを取得する。ない場合は作成する'''
+    '''LINEのグループIDでデータベースからグループを取得する'''
     try:
         return Group.objects.get(line_group__group_id__exact=line_group_id)
     except Group.DoesNotExist:

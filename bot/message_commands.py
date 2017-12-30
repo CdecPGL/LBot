@@ -9,8 +9,9 @@ from dateutil.parser import parse as datetime_parse
 
 import bot.utilities as util
 from bot.authorities import UserAuthority
-from bot.exceptions import GroupNotFoundError, UserNotFoundError
+from bot.exceptions import GroupNotFoundError, UserNotFoundError, TaskNotFoundError
 from bot.models import Group, Task, User, Vocabulary
+import bot.database_utilities as db_util
 
 KNOW_BUT_LIST = ["は知ってるけど、", "は当たり前だね。でも",
                  "は最近はやってるよ。だけど", "は常識だよ。ところで", "はすごいよね。By the way, "]
@@ -54,24 +55,6 @@ def generate_random_reply(text: str)->str:
         # 新しい単語を登録
         Vocabulary(word=text).save()
         return text + random.choice(UNKNOW_BUT_LIST) + reply + random.choice(RANDOM_REPLY_SUFIX_LIST)
-
-
-def get_user_by_name_from_database(name: str)->User:
-    '''ユーザ名でデータベースからユーザーを取得する'''
-    try:
-        return User.objects.get(name__exact=name)
-    except User.DoesNotExist:
-        raise UserNotFoundError(
-            "ユーザー(名前: {})が見つかりませんでした。".format(name))
-
-
-def get_group_by_name_from_database(name: str)->Group:
-    '''グループ名でデータベースからユーザーを取得する'''
-    try:
-        return Group.objects.get(name__exact=name)
-    except Group.DoesNotExist:
-        raise GroupNotFoundError(
-            "グループ(名前: {})が見つかりませんでした。".format(name))
 
 
 __command_map = {}
@@ -179,7 +162,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             for group_name in group_name_list:
                 try:
                     new_task.groups.add(
-                        get_group_by_name_from_database(group_name))
+                        db_util.get_group_by_name_from_database(group_name))
                     valid_group_name_list.append(group_name)
                 except GroupNotFoundError:
                     error_list.append(
@@ -206,7 +189,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             for user_name in participant_name_list:
                 try:
                     new_task.participants.add(
-                        get_user_by_name_from_database(user_name))
+                        db_util.get_user_by_name_from_database(user_name))
                     valid_participant_name_list.append(user_name)
                 except UserNotFoundError:
                     error_list.append(
@@ -229,23 +212,55 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         raise
 
 
-@add_command_handler("タスク確認", UserAuthority.Watcher)
-def check_task_command(command_source: CommandSource, target: str = None, name: str = None)->(str, [str]):
-    '''タスクを確認します'''
+@add_command_handler("タスク列挙", UserAuthority.Watcher)
+def list_task_command(command_source: CommandSource, target: str = None, name: str = None)->(str, [str]):
+    '''タスクの一覧を表示します(未実装)。
+    ■コマンド引数
+    1: タスク名又はタスク短縮名。タスク名を優先して検索されます'''
+    return None, ["未実装"]
+
+
+@add_command_handler("タスク詳細", UserAuthority.Watcher)
+def check_task_command(command_source: CommandSource, target_task_name: str)->(str, [str]):
+    '''タスクの詳細を表示します。
+    ■コマンド引数
+    1: タスク名又はタスク短縮名'''
+    try:
+        task = db_util.get_task_by_name_or_shot_name_from_database(
+            target_task_name)
+        if task.managers.filter(id__exact=command_source.user_data.id).exists():
+            task.delete()
+            return "タスク「{}」を削除しました。".format(target_task_name), []
+        else:
+            return None, ["タスク「{}」の管理者でないから削除できないよー。".format(target_task_name)]
+    except TaskNotFoundError:
+        return None, ["タスク「{}」が見つからない！".format(target_task_name)]
     return None, ["未実装"]
 
 
 @add_command_handler("タスク削除", UserAuthority.Editor)
-def remove_task_command(command_source: CommandSource)->(str, [str]):
-    '''タスクを削除します。'''
-    return None, ["未実装"]
+def remove_task_command(command_source: CommandSource, target_task_name)->(str, [str]):
+    '''タスクを削除します。
+    ■コマンド引数
+    1: タスク名又はタスク短縮名'''
+    try:
+        task = db_util.get_task_by_name_or_shot_name_from_database(
+            target_task_name)
+        if task.managers.filter(id__exact=command_source.user_data.id).exists():
+            task.delete()
+            return "タスク「{}」を削除しました。".format(target_task_name), []
+        else:
+            return None, ["タスク「{}」の管理者でないから削除できないよー。".format(target_task_name)]
+    except TaskNotFoundError:
+        return None, ["タスク「{}」が見つからない！".format(target_task_name)]
 
 
 @add_command_handler("タスク編集", UserAuthority.Editor)
 def edit_task_command(command_source: CommandSource)->(str, [str]):
-    '''タスクを編集をします。
+    '''タスクを編集をします(未実装)。
     Editor権限以上のユーザーでないとタスク管理者にはなれません。
-    タスク管理者がいなくなるような変更は行えません。'''
+    タスク管理者がいなくなるような変更は行えません。
+    タスクの短縮名は全てタスク名、他のタスク短縮名と重複することはできません。'''
     return None, ["未実装"]
 
 
@@ -258,7 +273,7 @@ def change_user_authority(command_source: CommandSource, target_user_name: str, 
     1: 対象のユーザー名
     2: 権限。「Master」、「Editor」、「Watcher」のいずれか'''
     try:
-        user = get_user_by_name_from_database(target_user_name)
+        user = db_util.get_user_by_name_from_database(target_user_name)
         try:
             current_authority = UserAuthority[user.authority]
             target_authority = UserAuthority[target_authority]
@@ -273,7 +288,7 @@ def change_user_authority(command_source: CommandSource, target_user_name: str, 
                 return None, ["Masterユーザーがいなくなっちゃうよ。"]
         # 管理タスクがないか確認
         if target_authority == UserAuthority.Watcher:
-            if user.managing_tasks.count() > 0:
+            if user.managing_tasks.exists():
                 return [None, "ユーザー「{}」には管理しているタスクがあるので「{}」権限には変更できないよ。".format(target_user_name, UserAuthority.Watcher.name)]
         # 権限変更
         user.authority = target_authority.name

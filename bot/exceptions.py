@@ -15,3 +15,11 @@ class GroupNotFoundError(Exception):
     def __init__(self, message=""):
         super(GroupNotFoundError, self).__init__()
         self.message = message
+
+
+class TaskNotFoundError(Exception):
+    '''タスクが見つからなかった時の例外'''
+
+    def __init__(self, message=""):
+        super(TaskNotFoundError, self).__init__()
+        self.message = message
