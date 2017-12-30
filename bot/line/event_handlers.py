@@ -48,51 +48,60 @@ def join_event_handler(event):
 
 @event_handler.add(linebot.models.MessageEvent, message=linebot.models.TextMessage)
 def text_message_handler(event):
-    '''テキストメッセージを処理する'''
-    message_text = util.unify_newline_code(event.message.text)
-    # コマンドとパラメータの取得
-    command_param = None
-    if event.source.type == "user":
-        command_param = message_text
-    elif event.source.type == "group":
-        # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
-        hit_command_trigger_list = [
-            command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
-        if hit_command_trigger_list:
-            command_param = message_text[len(hit_command_trigger_list[0]):]
-    else:
-        sys.stderr.write('送信元"{}"には対応していません。\n'.format(event.source.type))
-        return
+    try:
+        '''テキストメッセージを処理する'''
+        message_text = util.unify_newline_code(event.message.text)
+        # コマンドとパラメータの取得
+        command_param = None
+        if event.source.type == "user":
+            command_param = message_text
+        elif event.source.type == "group":
+            # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
+            hit_command_trigger_list = [
+                command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
+            if hit_command_trigger_list:
+                command_param = message_text[len(hit_command_trigger_list[0]):]
+        else:
+            sys.stderr.write('送信元"{}"には対応していません。\n'.format(event.source.type))
+            return
 
-    # コマンドとパラメータの抽出
-    command = None
-    params = []
-    if command_param:
-        items = command_param.split("\n")
-        print(items)
-        command = items[0]
-        if len(items) > 1:
-            params = items[1:]
+        # コマンドとパラメータの抽出
+        command = None
+        params = []
+        if command_param:
+            items = command_param.split("\n")
+            print(items)
+            command = items[0]
+            if len(items) > 1:
+                params = items[1:]
 
-    # コマンドを実行し返信を送信。コマンドがない(自分宛てのメッセージではない)場合は返信しない
-    if command:
-        # メッセージ送信者をデータベースから検索し、なかったら作成
+        # コマンドを実行し返信を送信。コマンドがない(自分宛てのメッセージではない)場合は返信しない
+        if command:
+            # メッセージ送信者をデータベースから検索し、なかったら作成
+            try:
+                source_user = line_util.get_user_by_line_user_id_from_database(
+                    event.source.user_id)
+            except UserNotFoundError:
+                source_user = line_util.register_user_by_line_user_id(
+                    event.source.user_id)
+            # メッセージ送信グループをデータベースから検索し、なかったら作成
+            try:
+                source_group = line_util.get_group_by_line_group_id_from_database(
+                    event.source.group_id) if event.source.type == "group" else None
+            except GroupNotFoundError:
+                source_group = line_util.register_group_by_line_group_id(
+                    event.source.group_id)
+            # コマンド実行
+            command_source = mess_cmd.CommandSource(source_user, source_group)
+            reply = mess_cmd.execute_command(command, command_source, params)
+            line_settings.api.reply_message(
+                event.reply_token,
+                linebot.models.TextSendMessage(text=reply))
+    except Exception:
         try:
-            source_user = line_util.get_user_by_line_user_id_from_database(
-                event.source.user_id)
-        except UserNotFoundError:
-            source_user = line_util.register_user_by_line_user_id(
-                event.source.user_id)
-        # メッセージ送信グループをデータベースから検索し、なかったら作成
-        try:
-            source_group = line_util.get_group_by_line_group_id_from_database(
-                event.source.group_id) if event.source.type == "group" else None
-        except GroupNotFoundError:
-            source_group = line_util.register_group_by_line_group_id(
-                event.source.group_id)
-        # コマンド実行
-        command_source = mess_cmd.CommandSource(source_user, source_group)
-        reply = mess_cmd.execute_command(command, command_source, params)
-        line_settings.api.reply_message(
-            event.reply_token,
-            linebot.models.TextSendMessage(text=reply))
+            line_settings.api.reply_message(
+                event.reply_token,
+                linebot.models.TextSendMessage(text="なんか問題が起こった。"))
+        except Exception:
+            pass
+        raise

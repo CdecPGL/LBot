@@ -224,7 +224,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         reply += "■参加者\n{}".format("、".join(valid_participant_name_list))
         return reply, error_list
     # 途中でエラーになったら作成したタスクは削除する
-    except:
+    except Exception:
         new_task.delete()
         raise
 
