@@ -97,7 +97,7 @@ def help_command(command_source: CommandSource, target_command: str = None)->(st
     for command_name, (command_func, command_authority) in __command_map.items():
         command_doc = inspect.getdoc(command_func)
         simple_doc = command_doc.split("\n")[0] if command_doc else "未設定"
-        command_list.append("■{}({})\n{}".format(
+        command_list.append("■{}(権限：{})\n{}".format(
             command_name, command_authority.name, simple_doc))
     # ターゲットが指定されていたらそのコマンドの詳細を表示
     if target_command:
@@ -106,7 +106,7 @@ def help_command(command_source: CommandSource, target_command: str = None)->(st
                            command_authority) = __command_map[target_command]
             return "<「{}」コマンドの使い方>\n■必要権限\n{}\n{}".format(command_name, command_authority.name, inspect.getdoc(command_func)), []
         else:
-            return "「{}」コマンドは存在しません。\n<コマンド一覧>\n" + "\n".join(command_list), []
+            return "「{}」コマンドは存在しません。\n<コマンド一覧>\n{}".format(target_command, "\n".join(command_list)), []
     # 指定されていなかったらコマンドリストを表示
     else:
         return '「使い方」コマンドにコマンド名を指定することで、そのコマンドの詳細説明を表示します。\n<コマンド一覧>\n' + "\n".join(command_list), []
