@@ -258,7 +258,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all(
             ) if check_task_watch_authority(command_source.user_data, task)]
             # 参加しているグループで全員指定されているタスク
-            
+
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
@@ -396,14 +396,14 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
     Master権限を持つユーザーか、本人のみ表示できます。
     コマンド引数
     (1: 対象のユーザー名。デフォルトは送信者)'''
-    # 権限確認
-    if command_source.user_data.name != target_user_name and UserAuthority[command_source.user_data.authority] != UserAuthority.Master:
-        return None, ["ユーザ情報は本人かMasterユーザーにしか表示できないんだよね。"]
     try:
         if target_user_name:
             user = db_util.get_user_by_name_from_database(target_user_name)
         else:
             user = command_source.user_data
+        # 権限確認(エラーメッセージの表示優先度的にここでチェックする)
+        if command_source.user_data.name != target_user_name and UserAuthority[command_source.user_data.authority] != UserAuthority.Master:
+            return None, ["ユーザ情報は本人かMasterユーザーにしか表示できないんだよね。"]
         repply = "<ユーザー情報>\n"
         repply += "■ユーザー名\n{}\n".format(user.name)
         repply += "■権限\n{}\n".format(user.authority)
