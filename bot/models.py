@@ -88,7 +88,7 @@ class Task(models.Model):
     # タスクの参加者。タスク管理者のみ変更可能
     participants = models.ManyToManyField(User, related_name="belonging_tasks")
     # タスクの参加グループ。タスク管理者のみ変更可能
-    groups = models.ManyToManyField(Group)
+    groups = models.ManyToManyField(Group, related_name="tasks")
     # Asanaタスク。タスク管理者のみ変更可能
     asana_task = models.OneToOneField(
         AsanaTask, on_delete=models.SET_NULL, null=True)
