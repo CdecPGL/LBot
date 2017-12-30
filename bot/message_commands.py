@@ -191,7 +191,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
                     error_list.append(
                         "ユーザー「{}」が見つからないため、参加者に追加できませんでした。".format(user_name))
         # 参加者が指定されていなかったら送信者を設定
-        else:
+        if not participant_name_list:
             new_task.participants.add(task_create_user)
             participant_name_list.append(task_create_user.name)
         # データベースに保存
