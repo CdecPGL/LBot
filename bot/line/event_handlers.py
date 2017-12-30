@@ -72,10 +72,17 @@ def text_message_handler(event):
         if command_param:
             items = command_param.split("\n")
             print(items)
+            # 文字列の長さが規定値を超えていたらリジェクト
             if any([len(item) > SENTENCE_MAX_LENGTH for item in items]):
                 line_settings.api.reply_message(
                     event.reply_token,
                     linebot.models.TextSendMessage(text="長文は受け付けません(´ε｀ )"))
+                return
+            # コマンド文字列が空だったらリジェクト
+            if not items or not items[0]:
+                line_settings.api.reply_message(
+                    event.reply_token,
+                    linebot.models.TextSendMessage(text="なんか言いたまへ(@_@)"))
                 return
             command = items[0]
             if len(items) > 1:
