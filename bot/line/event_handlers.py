@@ -92,6 +92,7 @@ def text_message_handler(event):
                 event.source.group_id)
         # コマンド実行
         command_source = mess_cmd.CommandSource(source_user, source_group)
+        print(command, command_source, params)
         reply = mess_cmd.execute_command(command, command_source, params)
         line_settings.api.reply_message(
             event.reply_token,
