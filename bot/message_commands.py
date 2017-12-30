@@ -150,7 +150,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     new_task.managers.add(task_create_user)
     try:
         # 参加グループ設定
-        group_name_list = []
+        valid_group_name_list = []
         # グループが指定されていたらそれを設定
         if groups:
             group_name_list = util.split_command_paramater_strig(
@@ -159,47 +159,47 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
                 try:
                     new_task.groups.add(
                         get_group_by_name_from_database(group_name))
-                    group_name_list.append(group_name)
+                    valid_group_name_list.append(group_name)
                 except GroupNotFoundError:
                     error_list.append(
                         "グループ「{}」が見つからないため、参加グループに追加できませんでした。".format(group_name))
         # グループが指定されていなくて送信元がグループならそれを設定
-        if not group_name_list and command_source.group_data:
+        if not valid_group_name_list and command_source.group_data:
             new_task.groups.add(command_source.group_data)
-            group_name_list.append("このグループ")
+            valid_group_name_list.append("このグループ")
 
         # 参加者設定
-        participant_name_list = []
+        valid_participant_name_list = []
         # 全員参加なら全員参加フラグを設定
         if participants == EVERYONE_WORD:
-            if group_name_list:
+            if valid_group_name_list:
                 new_task.is_participate_all_in_groups = True
-                participant_name_list.append("指定グループの全員")
+                valid_participant_name_list.append("指定グループの全員")
             else:
                 new_task.delete()
                 return None, ["参加者にグループメンバー全員が指定されたけど、グループが指定されてないよ。。。"]
         # 参加者が指定されていたらそれを設定
         elif participants:
-            user_name_list = util.split_command_paramater_strig(
+            participant_name_list = util.split_command_paramater_strig(
                 participants)
-            for user_name in user_name_list:
+            for user_name in participant_name_list:
                 try:
                     new_task.participants.add(
                         get_user_by_name_from_database(user_name))
-                    participant_name_list.append(user_name)
+                    valid_participant_name_list.append(user_name)
                 except UserNotFoundError:
                     error_list.append(
                         "ユーザー「{}」が見つからないため、参加者に追加できませんでした。".format(user_name))
         # 参加者が指定されていなかったら送信者を設定
-        if not participant_name_list:
+        if not valid_participant_name_list:
             new_task.participants.add(task_create_user)
-            participant_name_list.append(task_create_user.name)
+            valid_participant_name_list.append(task_create_user.name)
         # データベースに保存
         new_task.save()
         reply = "「{}」タスクを作成し、期限を{}に設定しました。\n".format(
             task_name, task_deadline.strftime('%Y/%m/%d %H:%M:%S'))
         reply += "■参加グループ\n{}\n".format("、".join(group_name_list))
-        reply += "■参加者\n{}".format("、".join(participant_name_list))
+        reply += "■参加者\n{}".format("、".join(valid_participant_name_list))
         return reply, error_list
     # 途中でエラーになったら作成したタスクは削除する
     except:
