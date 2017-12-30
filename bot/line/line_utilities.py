@@ -103,7 +103,7 @@ def register_group_by_line_group_id(line_group_id: str)->Group:
         raise
 
 
-def check_and_add_member(user: User, group: Group):
+def check_and_add_member_to_group(user: User, group: Group):
     '''ユーザーがグループに属している確認して、属していないなら登録する。'''
     if not group.members.filter(id=user.id).exists():
         print("ユーザー「{}」をグループ「{}」に登録。".format(user.name, group.name))
