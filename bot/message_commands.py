@@ -258,7 +258,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all(
             ) if check_task_watch_authority(command_source.user_data, task)]
             # 参加しているグループで全員指定されているタスク
-            
+
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
@@ -516,7 +516,7 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
             repply += "■メンバー\n{}".format(members_str)
             return repply, []
         else:
-            return "グループ「{}」の閲覧権限がない。Master権限を持つユーザーか、グループの管理者と参加者のみ表示できる。".format(target_group_name)
+            return None, ["グループ「{}」の閲覧権限がない。Master権限を持つユーザーか、グループの管理者と参加者のみ表示できる。".format(target_group_name)]
     except GroupNotFoundError:
         return None, ["グループ「{}」が見つからない。".format(target_group_name)]
 
