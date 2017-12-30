@@ -465,7 +465,7 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
         belonging_tasks = get_user_belonging_tasks(user)
         if belonging_tasks.exists():
             belonging_tasks_str = "、".join(
-                [task.name for task in user.belonging_tasks.all()])
+                [task.name for task in belonging_tasks.all()])
         else:
             belonging_tasks_str = "なし"
         repply += "■参加タスク\n{}".format(belonging_tasks_str)
