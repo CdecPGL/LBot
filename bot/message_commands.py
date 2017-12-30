@@ -83,7 +83,7 @@ def check_task_watch_authority(user: User, task: Task):
         return is_participant or is_related_member
 
 
-def get_up_user_belonging_tasks(user: User):
+def get_user_belonging_tasks(user: User):
     '''ユーザーが参加しているタスクを取得する'''
     # ユーザーの参加タスク
     belonging_tasks = user.belonging_tasks.all()
@@ -275,7 +275,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
         try:
             '''指定ユーザーのタスクをリストアップする'''
             user = db_util.get_user_by_name_from_database(name)
-            task_name_deadline_list = [(task.name, task.deadline) for task in get_up_user_belonging_tasks(
+            task_name_deadline_list = [(task.name, task.deadline) for task in get_user_belonging_tasks(
                 user).all() if check_task_watch_authority(user, task)]
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
@@ -429,6 +429,7 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
             user = db_util.get_user_by_name_from_database(target_user_name)
         else:
             user = command_source.user_data
+            target_user_name = command_source.user_data.name
         # 権限確認(エラーメッセージの表示優先度的にここでチェックする)
         if command_source.user_data.name != target_user_name and UserAuthority[command_source.user_data.authority] != UserAuthority.Master:
             return None, ["ユーザ情報は本人かMasterユーザーにしか表示できないんだよね。"]
@@ -461,7 +462,13 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
             belonging_groups_str = "なし"
         repply += "■参加グループ\n{}\n".format(belonging_groups_str)
         # 参加タスク
-        repply += "■参加タスク\n{}".format("未実装")
+        belonging_tasks = get_user_belonging_tasks(user)
+        if belonging_tasks.exists():
+            belonging_tasks_str = "、".join(
+                [task.name for task in user.belonging_tasks.all()])
+        else:
+            belonging_tasks_str = "なし"
+        repply += "■参加タスク\n{}".format(belonging_tasks_str)
         return repply, []
     except UserNotFoundError:
         return None, ["ユーザー「{}」はいないっぽい。".format(target_user_name)]
