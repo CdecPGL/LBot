@@ -69,7 +69,6 @@ def text_message_handler(event):
             # メッセージがコマンド開始文字列と全く同じ場合はリジェクト
             if any([command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text == command_trigger]):
                 raise Reject("なんか言いたまへ(@_@)")
-
             hit_command_trigger_list = [
                 command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
             if hit_command_trigger_list:
@@ -82,7 +81,7 @@ def text_message_handler(event):
         command = None
         params = []
         if command_param:
-            items = command_param.split("\n")
+            items = [item.strip() for item in command_param.split("\n")]
             print(items)
             # 文字列の長さが規定値を超えていたらリジェクト
             if any([len(item) > SENTENCE_MAX_LENGTH for item in items]):
