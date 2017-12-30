@@ -20,6 +20,8 @@ RANDOM_REPLY_SUFIX_LIST = ["じゃない？", "だよね。", "なんだって�
                            "、はあ。", "らしいよ。知らんけど", "はクソ。", ", is it right?", "、喧嘩売ってんの？"]
 MAX_VOCABLARY_COUNT = 100
 
+EVERYONE_WORD = "全員"
+
 
 class CommandSource(object):
     '''コマンド送信元のデータ'''
@@ -74,6 +76,7 @@ def get_gropu_by_name_from_database(name: str)->Group:
 
 __command_map = {}
 
+
 def add_command_handler(command_name, authority):
     '''コマンドハンドラを追加するデコレータ。
     第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
@@ -86,7 +89,7 @@ def add_command_handler(command_name, authority):
 
 @add_command_handler("使い方", UserAuthority.Watcher)
 def help_command(command_source: CommandSource)->(str, [str]):
-    '''ヘルプ'''
+    '''ヘルプを表示します。'''
     return '<コマンド一覧>\n' + "\n".join(["■{}\n{}".format(name, inspect.getdoc(func_auth[0])) for name, func_auth in __command_map.items()]), []
 
 
@@ -120,12 +123,15 @@ def test_command(command_source: CommandSource, *params)->(str, [str]):
 
 
 @add_command_handler("タスク追加", UserAuthority.Editor)
-def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, participants: str=None, groups: str=None)->(str, [str]):
-    '''タスクを追加します。メッセージの送信者がタスク管理者に設定されます。
+def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, participants: str = None, groups: str = None)->(str, [str]):
+    '''タスクを追加します。
+    メッセージの送信者がタスク管理者に設定されます。タスク管理者はそのタスクのあらゆる操作を実行できます。
+    参加者を指定しない場合は送信者が設定されます。参加者はそのタスクの情報を参照することができ、期限が近づくと通知されます。
+    また、グループを指定しない場合は送信元のグループが設定されます。グループを設定すると、そのグループメンバーは参加者でなくてもそのタスクを参照できます。
     1: タスク名
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
-    (3: 、か,区切りで参加者を指定。デフォルトは送信者)
-    (4: 、か,区切りで参加グループを指定。デフォルトはなし)'''
+    (3: 、か,区切りで参加者を指定。デフォルトは送信者。「{}」で参加グループ全員)
+    (4: 、か,区切りで参加グループを指定。デフォルトはなし)'''.format(EVERYONE_WORD)
     # すでに同名のタスクがないか確認
     if Task.objects.filter(name__exact=task_name).count():
         return None, ["タスク「{}」はすでに存在します……".format(task_name)]
@@ -139,22 +145,14 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             return None, ["期限が過去になってるよ……"]
     except ValueError:
         return None, ["期限には日時をしてくださいいいいい！"]
-    new_task = Task.objects.create(name=task_name, deadline=task_deadline)
+    new_task = Task.objects.create(
+        name=task_name, deadline=task_deadline, is_participate_all_in_group=False)
     new_task.managers.add(task_create_user)
-    # 参加者設定
-    if participants:
-        user_name_list = util.split_command_paramater_strig(
-            participants)
-        for user_name in user_name_list:
-            try:
-                new_task.participants.add(
-                    get_user_by_name_from_database(user_name))
-            except UserNotFoundError:
-                error_list.append(
-                    "ユーザー「{}」が見つからないため、参加者に追加できませんでした。".format(user_name))
-    elif participants:
-        new_task.participants.add(task_create_user)
+
     # 参加グループ設定
+    do_groups_exist = False
+    group_name_list = []
+    # グループが指定されていたらそれを設定
     if groups:
         group_name_list = util.split_command_paramater_strig(
             groups)
@@ -162,12 +160,48 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             try:
                 new_task.group.add(
                     get_gropu_by_name_from_database(group_name))
+                do_groups_exist = True
+                group_name_list.append(group_name)
             except GroupNotFoundError:
                 error_list.append(
                     "グループ「{}」が見つからないため、参加グループに追加できませんでした。".format(group_name))
+    # グループが指定されていなくて送信元がグループならそれを設定
+    elif command_source.group_data:
+        new_task.group.add(command_source.group_data)
+        group_name_list.append("このグループ")
+
+    # 参加者設定
+    participant_name_list = []
+    # 全員参加なら全員参加フラグを設定
+    if participants == EVERYONE_WORD:
+        if do_groups_exist:
+            new_task.is_participate_all_in_group = True
+            participant_name_list.append("指定グループの全員")
+        else:
+            return None, ["参加者にグループメンバー全員が指定されたけど、グループが指定されてないよ。。。"]
+    # 参加者が指定されていたらそれを設定
+    elif participants:
+        user_name_list = util.split_command_paramater_strig(
+            participants)
+        for user_name in user_name_list:
+            try:
+                new_task.participants.add(
+                    get_user_by_name_from_database(user_name))
+                participant_name_list.append(user_name)
+            except UserNotFoundError:
+                error_list.append(
+                    "ユーザー「{}」が見つからないため、参加者に追加できませんでした。".format(user_name))
+    # 参加者が指定されていなかったら送信者を設定
+    else:
+        new_task.participants.add(task_create_user)
+        participant_name_list.append(task_create_user.name)
     # データベースに保存
     new_task.save()
-    return "「{}」タスクを作成し、期限を{}に設定しました。".format(task_name, task_deadline.strftime('%Y/%m/%d %H:%M:%S')), error_list
+    reply = "「{}」タスクを作成し、期限を{}に設定しました。\n".format(
+        task_name, task_deadline.strftime('%Y/%m/%d %H:%M:%S'))
+    reply += "■参加グループ\n{}\n".format("、".join(group_name_list))
+    reply += "■参加者\n{}".format("、".join(participant_name_list))
+    return reply, error_list
 
 
 @add_command_handler("タスク確認", UserAuthority.Watcher)
