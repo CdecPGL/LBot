@@ -156,6 +156,11 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
         return reply, []
 
 
+def convert_datetime_to_string(date_time: datetime.datetime):
+    '''日時を文字列に変換する'''
+    return date_time.strftime('%Y/%m/%d %H:%M:%S')
+
+
 @add_command_handler("ユーザー確認", UserAuthority.Watcher)
 @add_command_handler("ユーザー編集", UserAuthority.Watcher)
 @add_command_handler("グループ編集", UserAuthority.Watcher)
@@ -259,7 +264,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         # データベースに保存
         new_task.save()
         reply = "「{}」タスクを作成し、期限を{}に設定しました。\n".format(
-            task_name, task_deadline.strftime('%Y/%m/%d %H:%M:%S'))
+            task_name, convert_datetime_to_string(task_deadline))
         reply += "■関連グループ\n{}\n".format("、".join(valid_group_name_list)
                                         if valid_group_name_list else "なし")
         reply += "■参加者\n{}".format("、".join(valid_participant_name_list))
@@ -272,10 +277,57 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
 
 @add_command_handler("タスク列挙", UserAuthority.Watcher)
 def list_task_command(command_source: CommandSource, target: str = None, name: str = None)->(str, [str]):
-    '''タスクの一覧を表示します(未実装)。
+    '''タスクの一覧を表示します。
     ■コマンド引数
-    1: タスク名又はタスク短縮名。タスク名を優先して検索されます'''
-    return None, ["未実装"]
+    (1: 「グループ」又は「ユーザー」。デフォルトは両方)
+    (2: グループ又はユーザーの名前。デフォルトは送信者)'''
+    def list_user_task(command_source: CommandSource, name: str):
+        try:
+            '''指定ユーザーのタスクをリストアップする'''
+            user = db_util.get_user_by_name_from_database(name)
+            # ユーザーの参加タスク
+            task_name_deadline_list = [(task.name, task.datetime) for task in user.belonging_tasks.all(
+            ) if check_task_group_watch_authority(command_source, task)[0]]
+            # 参加しているグループで全員指定されている
+
+            # 期限の近い順に並び替え
+            task_name_deadline_list.sort(key=lambda name, deadline: deadline)
+            return "■ユーザー「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, deadline) for name, deadline in task_name_deadline_list])), []
+        except UserNotFoundError:
+            return None, ["ユーザー「{}」が見つからなかった。".format(name)]
+
+    def list_group_task(command_source: CommandSource, name: str):
+        '''指定グループのタスクをリストアップする'''
+        try:
+            group = db_util.get_group_by_name_from_database(name)
+            task_name_deadline_list = [(task.name, task.deadline) for task in group.tasks.all(
+            ) if check_task_group_watch_authority(command_source, task)[0]]
+            # 期限の近い順に並び替え
+            task_name_deadline_list.sort(key=lambda name, deadline: deadline)
+            return "■グループ「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, deadline) for name, deadline in task_name_deadline_list])), []
+        except GroupNotFoundError:
+            return None, ["グループ「{}」が見つからなかった。".format(name)]
+
+    if target == "グループ":
+        if command_source.group_data:
+            return list_group_task(command_source, name if name else command_source.group_data.name)
+        else:
+            return None, ["グループからのコマンドじゃないのでターゲットにグループを指定さしても意味ないよ。"]
+    elif target == "ユーザー":
+        return list_user_task(command_source, name if name else command_source.user_data.name)
+    # ターゲットが指定されてなかったらグループとユーザーの両方を列挙
+    elif target is None:
+        reply, errors = list_user_task(
+            command_source, command_source.user_data.name)
+        # グループが送信元の場合のみグループは列挙
+        if command_source.group_data:
+            reply_group, error_group = list_group_task(
+                command_source, command_source.group_data.name)
+            reply += "\n" + reply_group
+            errors.extend(error_group)
+        return reply, errors
+    else:
+        return None, ["不明なターゲット「{}」が指定されました。ターゲットは「グループ」か「ユーザー」である必要があります。".format(target)]
 
 
 @add_command_handler("タスク詳細", UserAuthority.Watcher)
@@ -296,7 +348,7 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
             reply += "■短縮名\n{}\n".format(
                 task.short_name if task.short_name else "未設定")
             reply += "■期限\n{}\n".format(
-                task.deadline.strftime('%Y/%m/%d %H:%M:%S'))
+                convert_datetime_to_string(task.deadline))
             # 参加者
             if task.is_participate_all_in_groups:
                 participants_str = "関連グループの全員"
@@ -309,7 +361,7 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
             # 関連グループ
             if task.groups.exists():
                 groups_str = ",".join(
-                    [group.name if group.name else "名無しのグループ(ID: {})".format(group.id) for group in task.groups.all()])
+                    [group.name for group in task.groups.all()])
             else:
                 groups_str = "なし"
             reply += "■関連グループ\n{}".format(groups_str)

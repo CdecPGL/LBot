@@ -57,7 +57,7 @@ class AsanaTeam(models.Model):
 class Group(models.Model):
     '''グループデータベース'''
     # グループ名。グループ管理者のみ変更可能
-    name = models.CharField(max_length=64, null=True)
+    name = models.CharField(max_length=64)
     # 管理者。グループ管理者のみ変更可能
     managers = models.ManyToManyField(User, related_name="managing_groups")
     # メンバー。グループ管理者のみ変更可能

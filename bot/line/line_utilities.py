@@ -38,10 +38,16 @@ def register_user_by_line_user_id(line_user_id):
 
 
 def register_group_by_line_group_id(line_group_id):
-    '''LINEユーザーIDでユーザーを登録する。戻り値は新しいユーザーデータ'''
+    '''LINEユーザーIDでユーザーを登録する。戻り値は新しいユーザーデータ。
+    グループ名はグループ数から自動で「グループ**」と付けられる。'''
     # LINEグループをデータベースに登録
     new_line_group = LineGroup.objects.create(group_id=line_group_id)
     # ユーザをデータベースに登録
-    new_group = Group.objects.create(line_group=new_line_group)
+    total_group_count = Group.objects.count()
+    # グループ名を自動で決定
+    while Group.objects.filter(name="グループ{}".format(total_group_count)):
+        total_group_count += 1
+    new_group = Group.objects.create(name="グループ{}".format(
+        total_group_count), line_group=new_line_group)
     print("グループ(LineID: {})をデータベースに登録しました。".format(line_group_id))
     return new_group
