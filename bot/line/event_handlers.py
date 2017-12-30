@@ -9,6 +9,7 @@ import bot.utilities as util
 from bot.exceptions import GroupNotFoundError, UserNotFoundError
 
 COMMAND_TRIGGER_LIST = ["#", "＃"]
+SENTENCE_MAX_LENGTH = 64
 
 event_handler = linebot.WebhookHandler(line_settings.CHANNEL_SECRET)
 
@@ -71,6 +72,11 @@ def text_message_handler(event):
         if command_param:
             items = command_param.split("\n")
             print(items)
+            if any([len(item) > SENTENCE_MAX_LENGTH for item in items]):
+                line_settings.api.reply_message(
+                    event.reply_token,
+                    linebot.models.TextSendMessage(text="長文は受け付けません(´ε｀ )"))
+                    return
             command = items[0]
             if len(items) > 1:
                 params = items[1:]
