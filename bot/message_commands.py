@@ -103,7 +103,7 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
     if target_command_name:
         if target_command_name in __command_map:
             command_func, command_authority = __command_map[target_command_name]
-            return "<「{}」コマンドの使い方>\n■必要権限\n{}\n{}".format(target_command_name, command_authority.name, inspect.getdoc(command_func)), []
+            return "<「{}」コマンドの使い方>\n■必要権限\n{}\n■説明\n{}".format(target_command_name, command_authority.name, inspect.getdoc(command_func)), []
         else:
             return "「{}」コマンドは存在しません。\n<コマンド一覧>\n{}".format(target_command_name, "\n".join(command_list)), []
     # 指定されていなかったらコマンドリストを表示
