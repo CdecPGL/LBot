@@ -88,7 +88,7 @@ def add_command_handler(command_name, authority):
 
 
 @add_command_handler("使い方", UserAuthority.Watcher)
-def help_command(command_source: CommandSource, target_command: str = None)->(str, [str]):
+def help_command(command_source: CommandSource, target_command_name: str = None)->(str, [str]):
     '''使い方を表示します。コマンドの指定がない場合はコマンドの一覧を表示します。
     ■コマンド引数
     (1: 使い方を見たいコマンド名)'''
@@ -100,13 +100,12 @@ def help_command(command_source: CommandSource, target_command: str = None)->(st
         command_list.append("■{}(権限：{})\n{}".format(
             command_name, command_authority.name, simple_doc))
     # ターゲットが指定されていたらそのコマンドの詳細を表示
-    if target_command:
-        if target_command in __command_map:
-            command_name, (command_func,
-                           command_authority) = __command_map[target_command]
-            return "<「{}」コマンドの使い方>\n■必要権限\n{}\n{}".format(command_name, command_authority.name, inspect.getdoc(command_func)), []
+    if target_command_name:
+        if target_command_name in __command_map:
+            command_func, command_authority = __command_map[target_command_name]
+            return "<「{}」コマンドの使い方>\n■必要権限\n{}\n{}".format(target_command_name, command_authority.name, inspect.getdoc(command_func)), []
         else:
-            return "「{}」コマンドは存在しません。\n<コマンド一覧>\n{}".format(target_command, "\n".join(command_list)), []
+            return "「{}」コマンドは存在しません。\n<コマンド一覧>\n{}".format(target_command_name, "\n".join(command_list)), []
     # 指定されていなかったらコマンドリストを表示
     else:
         return '「使い方」コマンドにコマンド名を指定することで、そのコマンドの詳細説明を表示します。\n<コマンド一覧>\n' + "\n".join(command_list), []
