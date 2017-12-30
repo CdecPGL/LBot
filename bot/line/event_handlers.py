@@ -58,6 +58,27 @@ def text_message_handler(event):
             self.message = message
 
     try:
+        # メッセージ送信グループをデータベースから検索し、なかったら作成
+        try:
+            source_group = line_util.get_group_by_line_group_id_from_database(
+                event.source.group_id) if event.source.type == "group" else None
+        except GroupNotFoundError:
+            source_group = line_util.register_group_by_line_group_id(
+                event.source.group_id)
+        # メッセージ送信者をデータベースから検索し、なかったら作成
+        try:
+            source_user = line_util.get_user_by_line_user_id_from_database(
+                event.source.user_id)
+            # グループへメンバーが登録されているか確認しひつお湯なら登録
+            line_util.check_and_add_member(source_user, source_user)
+        except UserNotFoundError:
+            if source_group:
+                source_user = line_util.register_user_by_line_user_id_in_group(
+                    event.source.user_id, event.source.group_id)
+            else:
+                source_user = line_util.register_user_by_line_user_id(
+                    event.source.user_id)
+
         message_text = util.unify_newline_code(event.message.text)
         # コマンドとパラメータの取得
         command_param = None
@@ -95,24 +116,6 @@ def text_message_handler(event):
 
         # コマンドを実行し返信を送信。コマンドがない(自分宛てのメッセージではない)場合は返信しない
         if command:
-            # メッセージ送信グループをデータベースから検索し、なかったら作成
-            try:
-                source_group = line_util.get_group_by_line_group_id_from_database(
-                    event.source.group_id) if event.source.type == "group" else None
-            except GroupNotFoundError:
-                source_group = line_util.register_group_by_line_group_id(
-                    event.source.group_id)
-            # メッセージ送信者をデータベースから検索し、なかったら作成
-            try:
-                source_user = line_util.get_user_by_line_user_id_from_database(
-                    event.source.user_id)
-            except UserNotFoundError:
-                if source_group:
-                    source_user = line_util.register_user_by_line_user_in_group_id(
-                        event.source.user_id, event.source.group_id)
-                else:
-                    source_user = line_util.register_user_by_line_user_id(
-                        event.source.user_id)
             # コマンド実行
             command_source = mess_cmd.CommandSource(source_user, source_group)
             reply = mess_cmd.execute_command(command, command_source, params)
