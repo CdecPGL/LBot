@@ -58,6 +58,12 @@ def text_message_handler(event):
             command_param = message_text
         elif event.source.type == "group":
             # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
+            # メッセージがコマンド開始文字列と全く同じ場合はリジェクト
+            if any([command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text == command_trigger]):
+                line_settings.api.reply_message(
+                    event.reply_token,
+                    linebot.models.TextSendMessage(text="なんか言いたまへ(@_@)"))
+                return
             hit_command_trigger_list = [
                 command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
             if hit_command_trigger_list:
@@ -82,7 +88,7 @@ def text_message_handler(event):
             if not items or not items[0]:
                 line_settings.api.reply_message(
                     event.reply_token,
-                    linebot.models.TextSendMessage(text="なんか言いたまへ(@_@)"))
+                    linebot.models.TextSendMessage(text="もうちょっと喋って？"))
                 return
             command = items[0]
             if len(items) > 1:
