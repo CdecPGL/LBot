@@ -257,12 +257,12 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             # ユーザーの参加タスク
             task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all(
             ) if check_task_watch_authority(command_source.user_data, task)]
-            # 参加しているグループで全員指定されている
-
+            # 参加しているグループで全員指定されているタスク
+            
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
-            return "■ユーザー「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, convert_datetime_to_string(deadline)) for name, deadline in task_name_deadline_list])), []
+            return "■ユーザー「{}」のタスク一覧\n{}".format(name, "\n".join(["{}: {}".format(name, convert_datetime_to_string(deadline)) for name, deadline in task_name_deadline_list])), []
         except UserNotFoundError:
             return None, ["ユーザー「{}」が見つからなかった。".format(name)]
 
@@ -530,7 +530,7 @@ def execute_command(command: str, command_source: CommandSource, params: [str]):
             reply, errors = command_func(command_source, *params)
         else:
             reply = None
-            errors = ["お前にそんな権限はないよ。お前の権限：{}、コマンドの要求権限：{}。権限の変更はMasterユーザーに頼んでネ^_^".format(
+            errors = ["残念ながら権限がないよ。Youの権限：{}、コマンドの要求権限：{}。権限の変更はMasterユーザーに頼んでネ^_^".format(
                 user_authority.name, command_authority.name)]
         # 結果を返す
         if reply is None:

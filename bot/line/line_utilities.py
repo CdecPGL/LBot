@@ -46,6 +46,28 @@ def register_user_by_line_user_id(line_user_id):
         new_line_user.delete()
         raise
 
+def register_user_by_line_user_in_group_id(line_user_id, line_group_id):
+    '''LINEユーザーIDでユーザーを登録する。戻り値は新しいユーザーデータ'''
+    user_profile = line_api.get_group_member_profile(line_group_id, line_user_id)
+    name = user_profile.display_name
+    # LINEユーザーをデータベースに登録
+    new_line_user = LineUser.objects.create(user_id=line_user_id, name=name)
+    try:
+        # ユーザをデータベースに登録
+        counter = 1
+        name_candidate = name
+        # 重複がないように必要なら名前にインデックスを付ける
+        while User.objects.filter(name=name_candidate).exists():
+            name_candidate = name + str(counter)
+            counter += 1
+        new_user = User.objects.create(name=name_candidate, line_user=new_line_user,
+                                       authority=UserAuthority.Watcher.name)
+        print("ユーザー(LineID: {}, Name: {})をデータベースに登録しました。".format(line_user_id, name))
+        return new_user
+    except Exception:
+        new_line_user.delete()
+        raise
+
 
 def register_group_by_line_group_id(line_group_id):
     '''LINEユーザーIDでユーザーを登録する。戻り値は新しいユーザーデータ。
