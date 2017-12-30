@@ -271,7 +271,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
 
 
 @add_command_handler("タスク列挙", UserAuthority.Watcher)
-def list_task_command(command_source: CommandSource, target: str = None, name: str)->(str, [str]):
+def list_task_command(command_source: CommandSource, target: str = None, name: str = None)->(str, [str]):
     '''タスクの一覧を表示します(未実装)。
     ■コマンド引数
     1: タスク名又はタスク短縮名。タスク名を優先して検索されます'''
