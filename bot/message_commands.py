@@ -431,7 +431,7 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
             belonging_groups_str = "なし"
         repply += "■参加グループ\n{}\n".format(belonging_groups_str)
         # 参加タスク
-        repply += "■参加タスク\n{}\n".format("未実装")
+        repply += "■参加タスク\n{}".format("未実装")
         return repply, []
     except UserNotFoundError:
         return None, ["ユーザー「{}」はいないっぽい。".format(target_user_name)]
