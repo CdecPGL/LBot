@@ -85,7 +85,7 @@ def get_up_user_belonging_tasks(user: User):
     # ユーザーの参加タスク
     belonging_tasks = user.belonging_tasks.all()
     # 参加しているグループで全員指定されているタスク
-    belonging_tasks += Task.objects.filter(
+    belonging_tasks |= Task.objects.filter(
         groups__members__id=user.id, is_participate_all_in_groups=True).all()
     return belonging_tasks
 
