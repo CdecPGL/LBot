@@ -383,8 +383,8 @@ def change_user_name_command(command_source: CommandSource, target_user_name: st
         return None, ["ユーザ名は本人かMasterユーザーにしか変更できないんだよね。"]
     if User.objects.filter(name=new_user_name).exists():
         return None, ["ユーザー名「{}」は別の人が使ってるよ".format(new_user_name)]
-    target_user_name.name = new_user_name
-    target_user_name.save()
+    target_user.name = new_user_name
+    target_user.save()
     return "ユーザー「{}」の名前を「{}」に変更しましたよ。".format(target_user_name, new_user_name), []
 
 
