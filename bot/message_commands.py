@@ -158,7 +158,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             groups)
         for group_name in group_name_list:
             try:
-                new_task.group.add(
+                new_task.groups.add(
                     get_gropu_by_name_from_database(group_name))
                 do_groups_exist = True
                 group_name_list.append(group_name)
@@ -167,7 +167,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
                     "グループ「{}」が見つからないため、参加グループに追加できませんでした。".format(group_name))
     # グループが指定されていなくて送信元がグループならそれを設定
     elif command_source.group_data:
-        new_task.group.add(command_source.group_data)
+        new_task.groups.add(command_source.group_data)
         group_name_list.append("このグループ")
 
     # 参加者設定
