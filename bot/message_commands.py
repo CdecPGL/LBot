@@ -66,7 +66,10 @@ def check_task_edit_authority(user: User, task: Task):
 def check_if_task_participant(user: User, task: Task):
     '''ユーザーがタスクの参加者かどうか調べる。
     タスクの参加者になっているか、そのタスクがグループ全体参加の場合にタスクの関連グループにそのユーザーが入っている場合にTrue。'''
-    return task.participants.filter(id__exact=user.id).exists() or task.groups.filter(members__id=user.id, is_participate_all_in_groups=True)
+    if task.is_participate_all_in_groups:
+        return task.participants.filter(id__exact=user.id).exists() or task.groups.filter(members__id=user.id)
+    else:
+        return task.participants.filter(id__exact=user.id).exists()
 
 
 def check_task_watch_authority(user: User, task: Task):
