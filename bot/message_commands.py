@@ -262,7 +262,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
-            return "■ユーザー「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, deadline) for name, deadline in task_name_deadline_list])), []
+            return "■ユーザー「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, convert_datetime_to_string(deadline)) for name, deadline in task_name_deadline_list])), []
         except UserNotFoundError:
             return None, ["ユーザー「{}」が見つからなかった。".format(name)]
 
@@ -275,7 +275,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
-            return "■グループ「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, deadline) for name, deadline in task_name_deadline_list])), []
+            return "■グループ「{}」のタスク一覧\n{}".format(name, ".\n".join(["{}: {}".format(name, convert_datetime_to_string(deadline)) for name, deadline in task_name_deadline_list])), []
         except GroupNotFoundError:
             return None, ["グループ「{}」が見つからなかった。".format(name)]
 
