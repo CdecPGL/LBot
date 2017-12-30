@@ -76,7 +76,7 @@ def text_message_handler(event):
                 line_settings.api.reply_message(
                     event.reply_token,
                     linebot.models.TextSendMessage(text="長文は受け付けません(´ε｀ )"))
-                    return
+                return
             command = items[0]
             if len(items) > 1:
                 params = items[1:]
