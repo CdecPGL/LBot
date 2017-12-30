@@ -301,14 +301,14 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
                 participants_str = "関連グループの全員"
             elif task.participants.exists():
                 participants_str = ",".join(
-                    [participant.name for participant in task.participants])
+                    [participant.name for participant in task.participants.all()])
             else:
                 participants_str = "なし"
             reply += "■参加者\n{}\n".format(participants_str)
             # 関連グループ
             if task.groups.exists():
                 groups_str = ",".join(
-                    [group.name for group in task.groups])
+                    [group.name for group in task.groups.all()])
             else:
                 groups_str = "なし"
             reply += "■関連グループ\n{}\n".format(groups_str)
