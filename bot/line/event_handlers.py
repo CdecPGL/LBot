@@ -70,7 +70,7 @@ def text_message_handler(event):
             source_user = line_util.get_user_by_line_user_id_from_database(
                 event.source.user_id)
             # グループへメンバーが登録されているか確認し必要なら登録
-            if source_user:
+            if source_group:
                 line_util.check_and_add_member_to_group(
                     source_user, source_group)
         except UserNotFoundError:
