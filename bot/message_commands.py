@@ -63,15 +63,31 @@ def check_task_edit_authority(user: User, task: Task):
     return UserAuthority[user.authority] == UserAuthority.Master or task.managers.filter(id__exact=user.id).exists()
 
 
+def check_if_task_participant(user: User, task: Task):
+    '''ユーザーがタスクの参加者かどうか調べる。
+    タスクの参加者になっているか、そのタスクがグループ全体参加の場合にタスクの関連グループにそのユーザーが入っている場合にTrue。'''
+    return task.participants.filter(id__exact=user.id).exists() or task.filter(groups__members__id=user.id, is_participate_all_in_groups=True)
+
+
 def check_task_watch_authority(user: User, task: Task):
     '''ユーザーにタスクの閲覧権限があるかどうか。
     編集権限を持っているか、参加者であるか、関連グループのメンバーなら権限があるとみなす。'''
     if check_task_edit_authority(user, task):
         return True
     else:
-        is_participant = Task.participants.filter(id__exact=user.id).exists()
-        is_related_member = Task.groups.members.filter(id=user.id).exists()
+        is_participant = check_if_task_participant(user, task)
+        is_related_member = task.groups.filter(members__id=user.id).exists()
         return is_participant or is_related_member
+
+
+def get_up_user_belonging_tasks(user: User):
+    '''ユーザーが参加しているタスクを取得する'''
+    # ユーザーの参加タスク
+    belonging_tasks = user.belonging_tasks.all()
+    # 参加しているグループで全員指定されているタスク
+    belonging_tasks.append(Task.objects.filter(
+        groups__members__id=user.id, is_participate_all_in_groups=True).all())
+    return belonging_tasks
 
 
 def check_group_edit_authority(user: User, group: Group):
@@ -256,12 +272,8 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
         try:
             '''指定ユーザーのタスクをリストアップする'''
             user = db_util.get_user_by_name_from_database(name)
-            # ユーザーの参加タスク
-            task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all(
-            ) if check_task_watch_authority(command_source.user_data, task)]
-            # 参加しているグループで全員指定されているタスク
-            task_name_deadline_list.extend([(task.name, task.deadline) for task in Task.objects.filter(
-                groups__members__id=user.id, is_participate_all_in_groups=True).all()])
+            task_name_deadline_list = [(task.name, task.deadline) for task in get_up_user_belonging_tasks(
+                user) if check_task_watch_authority(user, task)]
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
