@@ -133,7 +133,6 @@ def convert_datetime_to_string(date_time: datetime.datetime):
     return date_time.strftime('%Y/%m/%d %H:%M:%S')
 
 
-@add_command_handler("グループ編集", UserAuthority.Watcher)
 @add_command_handler("議事録開始", UserAuthority.Editor)
 @add_command_handler("議事録終了", UserAuthority.Editor)
 @add_command_handler("テスト", UserAuthority.Master)
