@@ -308,7 +308,7 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
             # 関連グループ
             if task.groups.exists():
                 groups_str = ",".join(
-                    [group.name for group in task.groups.all()])
+                    [group.name if group.name else "名無しのグループ(ID: {})".format(group.id) for group in task.groups.all()])
             else:
                 groups_str = "なし"
             reply += "■関連グループ\n{}\n".format(groups_str)
