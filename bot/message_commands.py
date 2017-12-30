@@ -291,7 +291,8 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
         has_authority, authority_error = check_task_group_watch_authority(
             command_source, task)
         if has_authority:
-            reply = "<タスク「{}」詳細>\n".format(target_task_name)
+            reply = "<タスク詳細>\n"
+            reply += "■名前\n{}\n".format(target_task_name)
             reply += "■短縮名\n{}\n".format(
                 task.short_name if task.short_name else "未設定")
             reply += "■期限\n{}\n".format(
@@ -311,7 +312,7 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
                     [group.name if group.name else "名無しのグループ(ID: {})".format(group.id) for group in task.groups.all()])
             else:
                 groups_str = "なし"
-            reply += "■関連グループ\n{}\n".format(groups_str)
+            reply += "■関連グループ\n{}".format(groups_str)
             return reply, []
         else:
             return None, [authority_error]
