@@ -2,6 +2,9 @@
 
 from django.core.management.base import BaseCommand
 
+from bot import line
+from bot.models import Task
+
 
 class Command(BaseCommand):
     '''check_tasksコマンド'''
@@ -14,4 +17,14 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        pass
+        group_task_map = {}
+        for task in Task.objects.all():
+            for group in task.groups.all():
+                if group.line_group.group_id in group_task_map:
+                    group_task_map[group.line_group.group_id].append(task.name)
+                else:
+                    group_task_map[group.line_group.group_id] = [task.name]
+
+        for line_group_id, task_name_list in group_task_map.items():
+            mess = ".\n".join(task_name_list)
+            line.api.push_message(line_group_id, mess)
