@@ -26,5 +26,6 @@ class Command(BaseCommand):
                     group_task_map[group.line_group.group_id] = [task.name]
 
         for line_group_id, task_name_list in group_task_map.items():
-            mess = ".\n".join(task_name_list)
+            mess = "プッシュメッセージテスト\n"
+            mess += ".\n".join(task_name_list)
             line.api.push_message(line_group_id, mess)
