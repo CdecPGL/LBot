@@ -21,11 +21,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # 明日が期限のタスクを通知
         group_task_map = {}
-        today = datetime.date.today()
+        tommorow = datetime.date.today() + datetime.timedelta(days=1)
         start_datetime = datetime.datetime(
-            today.year, today.month, today.day, 0, 0, 0)
+            tommorow.year, tommorow.month, tommorow.day, 0, 0, 0)
         end_datetime = datetime.datetime(
-            today.year, today.month, today.day, 23, 59, 59, 999999)
+            tommorow.year, tommorow.month, tommorow.day, 23, 59, 59, 999999)
         for task in Task.objects.filter(deadline__range=(start_datetime, end_datetime)):
             for group in task.groups.all():
                 if group.line_group.group_id in group_task_map:
@@ -38,5 +38,5 @@ class Command(BaseCommand):
             line.api.push_message(line_group_id, TextSendMessage(text=mess))
             mess = "\n".join(task_name_list)
             line.api.push_message(line_group_id, TextSendMessage(text=mess))
-            mess = "おやすみ:D"
+            mess = "おやすみなさい:D"
             line.api.push_message(line_group_id, TextSendMessage(text=mess))
