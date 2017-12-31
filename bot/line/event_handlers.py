@@ -4,7 +4,7 @@ import linebot
 
 import bot.line.line_settings as line_settings
 import bot.line.line_utilities as line_util
-import bot.message_commands.message_command as mess_cmd
+import bot.message_commands as mess_cmd
 import bot.utilities as util
 from bot.exceptions import GroupNotFoundError, UserNotFoundError
 
