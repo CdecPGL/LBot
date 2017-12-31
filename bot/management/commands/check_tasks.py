@@ -1,6 +1,7 @@
 '''check_tasksコマンド'''
 
 from django.core.management.base import BaseCommand
+from linebot.models import TextSendMessage
 
 from bot import line
 from bot.models import Task
@@ -28,4 +29,4 @@ class Command(BaseCommand):
         for line_group_id, task_name_list in group_task_map.items():
             mess = "プッシュメッセージテスト\n"
             mess += ".\n".join(task_name_list)
-            line.api.push_message(line_group_id, mess)
+            line.api.push_message(line_group_id, TextSendMessage(text=mess))
