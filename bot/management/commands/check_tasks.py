@@ -5,6 +5,7 @@ from linebot.models import TextSendMessage
 
 from bot import line
 from bot.models import Task
+import datetime
 
 
 class Command(BaseCommand):
@@ -18,8 +19,14 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
+        # 明日が期限のタスクを通知
         group_task_map = {}
-        for task in Task.objects.all():
+        today = datetime.date.today()
+        start_datetime = datetime.datetime(
+            today.year, today.month, today.day, 0, 0, 0)
+        end_datetime = datetime.datetime(
+            today.year, today.month, today.day, 23, 59, 59, 999999)
+        for task in Task.objects.filter(deadline__range=(start_datetime, end_datetime)):
             for group in task.groups.all():
                 if group.line_group.group_id in group_task_map:
                     group_task_map[group.line_group.group_id].append(task.name)
@@ -27,6 +34,9 @@ class Command(BaseCommand):
                     group_task_map[group.line_group.group_id] = [task.name]
 
         for line_group_id, task_name_list in group_task_map.items():
-            mess = "プッシュメッセージテスト\n"
-            mess += ".\n".join(task_name_list)
+            mess = "こんばんは。明日が期限のタスクは以下のとおりだよ。"
+            line.api.push_message(line_group_id, TextSendMessage(text=mess))
+            mess = "\n".join(task_name_list)
+            line.api.push_message(line_group_id, TextSendMessage(text=mess))
+            mess = "おやすみ:D"
             line.api.push_message(line_group_id, TextSendMessage(text=mess))
