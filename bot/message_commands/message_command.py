@@ -3,6 +3,7 @@
 import inspect
 import sys
 import difflib
+import unicodedata
 
 from bot.authorities import UserAuthority
 from bot.models import Group, User
@@ -54,8 +55,15 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
         return reply, []
 
 
+def normalize_command_string(command_string):
+    '''コマンド文字列を正規化する'''
+    command_string = unicodedata.normalize('NFKC', command_string)
+    return command_string
+
+
 def execute_command(command: str, command_source: CommandSource, params: [str]):
     '''コマンド実行。返信メッセージを返す'''
+    command = normalize_command_string(command)
     if command in __command_map:
         command_func, command_authority = __command_map[command]
         # 権限の確認
