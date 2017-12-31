@@ -2,6 +2,7 @@
 
 import inspect
 import sys
+import difflib
 
 from bot.authorities import UserAuthority
 from bot.models import Group, User
@@ -79,7 +80,7 @@ def execute_command(command: str, command_source: CommandSource, params: [str]):
         return "\n".join(errors)
     elif command is not None:
         command_suggestions = [command_name for command_name in __command_map.keys(
-        ) if command_name.find(command) >= 0]
+        ) if difflib.SequenceMatcher(None, command, command_name).ratio() >= 0.75]
         if len(command_suggestions) == 1:
             return "{}？もしかして{}の間違いかなぁ？".format(command, "「" + command_suggestions[0] + "」")
         elif command_suggestions:
