@@ -78,6 +78,11 @@ def execute_command(command: str, command_source: CommandSource, params: [str]):
             errors.append(reply)
         return "\n".join(errors)
     elif command is not None:
-        return generate_random_reply(command)
+        command_suggestions = [command_name for command_name in __command_map.keys(
+        ) if command_name.find(command) >= 0]
+        if command_suggestions:
+            return "{}？　もしかして{}のどれかの間違いかなぁ？".format(command, "、".join(command_suggestions))
+        else:
+            return generate_random_reply(command)
     else:
         return "コマンドが指定されていません"
