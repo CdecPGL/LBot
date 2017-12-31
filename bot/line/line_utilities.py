@@ -2,8 +2,9 @@
 
 from bot.authorities import UserAuthority
 from bot.exceptions import GroupNotFoundError, UserNotFoundError
-from bot.line.line_settings import api as line_api
 from bot.models import Group, LineGroup, LineUser, User
+
+from .line_settings import api as line_api
 
 
 def get_user_by_line_user_id_from_database(line_user_id: str)->User:

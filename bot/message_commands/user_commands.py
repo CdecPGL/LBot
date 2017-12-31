@@ -3,10 +3,10 @@
 import bot.database_utilities as db_util
 from bot.authorities import UserAuthority
 from bot.exceptions import UserNotFoundError
-from bot.message_commands.message_command import (CommandSource,
-                                                  add_command_handler)
-from bot.message_commands.task_commands import get_user_belonging_tasks
 from bot.models import User
+
+from .message_command import CommandSource, add_command_handler
+from .task_commands import get_user_belonging_tasks
 
 
 @add_command_handler("ユーザー名変更", UserAuthority.Editor)

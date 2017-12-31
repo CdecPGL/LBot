@@ -7,9 +7,9 @@ import bot.utilities as util
 from bot.authorities import UserAuthority
 from bot.exceptions import (GroupNotFoundError, TaskNotFoundError,
                             UserNotFoundError)
-from bot.message_commands.message_command import (CommandSource,
-                                                  add_command_handler)
 from bot.models import Task, User
+
+from .message_command import CommandSource, add_command_handler
 
 EVERYONE_WORD = "全員"
 
