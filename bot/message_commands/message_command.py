@@ -80,7 +80,7 @@ def execute_command(command: str, command_source: CommandSource, params: [str]):
     elif command is not None:
         command_suggestions = [command_name for command_name in __command_map.keys(
         ) if command_name.find(command) >= 0]
-        if len(command_suggestions) > 1:
+        if len(command_suggestions) == 1:
             return "{}？もしかして{}の間違いかなぁ？".format(command, "「" + command_suggestions[0] + "」")
         elif command_suggestions:
             return "{}？もしかして{}のどれかの間違いかなぁ？".format(command, "、".join(["「" + command_sug + "」" for command_sug in command_suggestions]))
