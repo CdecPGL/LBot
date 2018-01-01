@@ -1,8 +1,16 @@
 from django.db import models
 
 from bot.authorities import UserAuthority
+from enum import Enum, auto
 
 # Create your models here.
+
+
+class TaskImportance(Enum):
+    '''タスクの重要度'''
+    High = "高"
+    Middle = "中"
+    Low = "低"
 
 
 class Vocabulary(models.Model):
@@ -77,12 +85,20 @@ class AsanaTask(models.Model):
 
 class Task(models.Model):
     '''タスクデーターベース'''
+    IMPORTANCE_CHOICES = (
+        (TaskImportance.High.name, TaskImportance.High.name),
+        (TaskImportance.Middle.name, TaskImportance.Middle.name),
+        (TaskImportance.Low.name, TaskImportance.Low.name),
+    )
     # タスク名。タスク作成時に設定。タスク管理者のみ変更可能
     name = models.CharField(max_length=64, unique=True)
     # タスクの短縮名。タスクマスターのみ変更可能
     short_name = models.CharField(max_length=64, unique=True, null=True)
     # 締め切り。タスク作成時に設定。タスクマスターのみ変更可能
     deadline = models.DateTimeField()
+    # 重要度
+    importance = models.CharField(
+        max_length=16, choices=IMPORTANCE_CHOICES, default=TaskImportance.Middle.name)
     # タスクの管理者。タスク管理者のみ変更可能
     managers = models.ManyToManyField(User, related_name="managing_tasks")
     # タスクの参加者。タスク管理者のみ変更可能

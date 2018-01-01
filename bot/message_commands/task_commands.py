@@ -9,7 +9,7 @@ import bot.utilities as util
 from bot.authorities import UserAuthority
 from bot.exceptions import (GroupNotFoundError, TaskNotFoundError,
                             UserNotFoundError)
-from bot.models import Task, User
+from bot.models import Task, User, TaskImportance
 from bot.utilities import TIMEZONE_DEFAULT
 
 from .message_command import CommandSource, add_command_handler
@@ -35,7 +35,7 @@ def check_task_watch_authority(user: User, task: Task):
 
 
 @add_command_handler("タスク追加", UserAuthority.Editor)
-def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, participants: str=None, groups: str=None)->(str, [str]):
+def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, importance: str = None, participants: str=None, groups: str=None)->(str, [str]):
     '''タスクを追加します。
     メッセージの送信者がタスク管理者に設定されます。タスク管理者はそのタスクのあらゆる操作を実行できます。
     参加者はそのタスクの情報を参照することができ、期限が近づくと通知されます。
@@ -43,8 +43,9 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     ■コマンド引数
     1: タスク名
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
-    (3: 、か,区切りで参加者を指定。デフォルトは送信者。「全員」で関連グループ全員を指定。
-    (4: 、か,区切りで参加グループを指定。デフォルトは送信元グループ)'''
+    (3: 重要度。「高」、「中」、「低」のいずれか。重要度によって催促の激しさが変わる)
+    (4: 、か,区切りで参加者を指定。デフォルトは送信者。「全員」で関連グループ全員を指定。
+    (5: 、か,区切りで参加グループを指定。デフォルトは送信元グループ)'''
     # すでに同名のタスクがないか確認
     if Task.objects.filter(name__exact=task_name).count():
         return None, ["タスク「{}」はすでに存在します……".format(task_name)]
@@ -63,8 +64,15 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             return None, ["期限が過去になってるよ……"]
     except ValueError:
         return None, ["期限には日時をしてくださいいいいい！"]
+
+    # 重要度を取得
+    try:
+        task_importance = TaskImportance(importance)
+    except ValueError:
+        return None, ["無効な重要度が指定された……。重要度は「高」、「中」、「低」のいずれかだよ……"]
+
     new_task = Task.objects.create(
-        name=task_name, deadline=task_deadline)
+        name=task_name, deadline=task_deadline, importance=task_importance.name)
     new_task.managers.add(task_create_user)
     try:
         # 参加グループ設定
@@ -148,7 +156,8 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
         try:
             '''指定ユーザーのタスクをリストアップする'''
             user = db_util.get_user_by_name_from_database(name)
-            task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all() if check_task_watch_authority(user, task)]
+            task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all(
+            ) if check_task_watch_authority(user, task)]
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
@@ -218,6 +227,14 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
                 task.short_name if task.short_name else "未設定")
             reply += "■期限\n{}\n".format(
                 util.convert_datetime_in_default_timezone_to_string(task.deadline))
+            reply += "■重要度\n{}\n".format(TaskImportance[task.importance].value)
+            # 管理者
+            if task.managers.exists():
+                managers_str = ",".join(
+                    [manager.name for manager in task.managers.all()])
+            else:
+                managers_str = "なし"
+            reply += "■管理者\n{}\n".format(managers_str)
             # 参加者
             if task.participants.exists():
                 participants_str = ",".join(
