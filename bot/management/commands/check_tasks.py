@@ -51,7 +51,7 @@ class Command(BaseCommand):
             def convert_deadline_to_string(deadline):
                 '''期限を時間分の文字列に変換'''
                 deadline = deadline.astimezone(TIMEZONE_DEFAULT)
-                return "{}:{}".format(deadline.hour, deadline.minute)
+                return "{:02d}:{:02d}".format(deadline.hour, deadline.minute)
 
             for line_group_id, task_list in group_task_map.items():
                 mess = "こんばんは。明日が期限のタスクは以下のとおりだよ。"
