@@ -87,6 +87,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         # グループが指定されていなくて送信元がグループならそれを設定
         if not valid_group_name_list and command_source.group_data:
             new_task.groups.add(command_source.group_data)
+            valid_group_list.append(command_source.group_data)
             valid_group_name_list.append("このグループ")
 
         # 参加者設定
