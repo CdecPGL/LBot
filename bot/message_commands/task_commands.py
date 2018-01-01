@@ -136,8 +136,8 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             valid_participant_name_list.append(task_create_user.name)
         # データベースに保存
         new_task.save()
-        reply = "「{}」タスクを作成し、期限を{}に設定しました。\n".format(
-            task_name, util.convert_datetime_in_default_timezone_to_string(task_deadline))
+        reply = "「{}」タスクを重要度「{}」で作成し、期限を{}に設定しました。\n".format(
+            task_name, task_importance.value, util.convert_datetime_in_default_timezone_to_string(task_deadline))
         reply += "■関連グループ\n{}\n".format("、".join(valid_group_name_list)
                                         if valid_group_name_list else "なし")
         reply += "■参加者\n{}".format("、".join(valid_participant_name_list))
