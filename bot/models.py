@@ -92,5 +92,3 @@ class Task(models.Model):
     # Asanaタスク。タスク管理者のみ変更可能
     asana_task = models.OneToOneField(
         AsanaTask, on_delete=models.SET_NULL, null=True)
-    # グループメンバー全員参加かどうか
-    is_participate_all_in_groups = models.BooleanField(default=False)

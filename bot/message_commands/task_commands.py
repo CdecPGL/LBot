@@ -23,34 +23,15 @@ def check_task_edit_authority(user: User, task: Task):
     return UserAuthority[user.authority] == UserAuthority.Master or task.managers.filter(id__exact=user.id).exists()
 
 
-def check_if_task_participant(user: User, task: Task):
-    '''ユーザーがタスクの参加者かどうか調べる。
-    タスクの参加者になっているか、そのタスクがグループ全体参加の場合にタスクの関連グループにそのユーザーが入っている場合にTrue。'''
-    if task.is_participate_all_in_groups:
-        return task.participants.filter(id__exact=user.id).exists() or task.groups.filter(members__id=user.id)
-    else:
-        return task.participants.filter(id__exact=user.id).exists()
-
-
 def check_task_watch_authority(user: User, task: Task):
     '''ユーザーにタスクの閲覧権限があるかどうか。
     編集権限を持っているか、参加者であるか、関連グループのメンバーなら権限があるとみなす。'''
     if check_task_edit_authority(user, task):
         return True
     else:
-        is_participant = check_if_task_participant(user, task)
+        is_participant = task.participants.filter(id=user.id).exists()
         is_related_member = task.groups.filter(members__id=user.id).exists()
         return is_participant or is_related_member
-
-
-def get_user_belonging_tasks(user: User):
-    '''ユーザーが参加しているタスクを取得する'''
-    # ユーザーの参加タスク
-    belonging_tasks = user.belonging_tasks.all()
-    # 参加しているグループで全員指定されているタスク
-    belonging_tasks = belonging_tasks | Task.objects.filter(
-        groups__members__id=user.id, is_participate_all_in_groups=True)
-    return belonging_tasks
 
 
 @add_command_handler("タスク追加", UserAuthority.Editor)
@@ -62,7 +43,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     ■コマンド引数
     1: タスク名
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
-    (3: 、か,区切りで参加者を指定。デフォルトは送信者。「全員」で関連グループ全員を指定。ただし「全員」と個別指定は併用不可)
+    (3: 、か,区切りで参加者を指定。デフォルトは送信者。「全員」で関連グループ全員を指定。
     (4: 、か,区切りで参加グループを指定。デフォルトは送信元グループ)'''
     # すでに同名のタスクがないか確認
     if Task.objects.filter(name__exact=task_name).count():
@@ -83,19 +64,22 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     except ValueError:
         return None, ["期限には日時をしてくださいいいいい！"]
     new_task = Task.objects.create(
-        name=task_name, deadline=task_deadline, is_participate_all_in_groups=False)
+        name=task_name, deadline=task_deadline)
     new_task.managers.add(task_create_user)
     try:
         # 参加グループ設定
         valid_group_name_list = []
+        valid_group_list = []
         # グループが指定されていたらそれを設定
         if groups:
             group_name_list = util.split_command_paramater_strig(
                 groups)
             for group_name in group_name_list:
                 try:
-                    new_task.groups.add(
-                        db_util.get_group_by_name_from_database(group_name))
+                    related_group = db_util.get_group_by_name_from_database(
+                        group_name)
+                    valid_group_list.append(related_group)
+                    new_task.groups.add(related_group)
                     valid_group_name_list.append(group_name)
                 except GroupNotFoundError:
                     error_list.append(
@@ -107,11 +91,19 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
 
         # 参加者設定
         valid_participant_name_list = []
-        # 全員参加なら全員参加フラグを設定
+
+        def add_participant(user):
+            '''参加者を追加する'''
+            # 重複がないようにする
+            if not new_task.participants.filter(id=user.id).exists():
+                new_task.participants.add(user)
+                valid_participant_name_list.append(user.name)
+        # 全員参加が指定されたら関連グループの全メンバーを参加させる
         if participants == EVERYONE_WORD:
             if valid_group_name_list:
-                new_task.is_participate_all_in_groups = True
-                valid_participant_name_list.append("関連グループの全員")
+                for group in valid_group_list:
+                    for member in group.members.all():
+                        add_participant(member)
             else:
                 new_task.delete()
                 return None, ["参加者にグループメンバー全員が指定されたけど、グループが指定されてないよ。。。"]
@@ -121,9 +113,8 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
                 participants)
             for user_name in participant_name_list:
                 try:
-                    new_task.participants.add(
+                    add_participant(
                         db_util.get_user_by_name_from_database(user_name))
-                    valid_participant_name_list.append(user_name)
                 except UserNotFoundError:
                     error_list.append(
                         "ユーザー「{}」が見つからないため、参加者に追加できませんでした。".format(user_name))
@@ -228,9 +219,7 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
             reply += "■期限\n{}\n".format(
                 util.convert_datetime_in_default_timezone_to_string(task.deadline))
             # 参加者
-            if task.is_participate_all_in_groups:
-                participants_str = "関連グループの全員"
-            elif task.participants.exists():
+            if task.participants.exists():
                 participants_str = ",".join(
                     [participant.name for participant in task.participants.all()])
             else:

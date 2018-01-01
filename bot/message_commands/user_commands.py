@@ -6,7 +6,6 @@ from bot.exceptions import UserNotFoundError
 from bot.models import User
 
 from .message_command import CommandSource, add_command_handler
-from .task_commands import get_user_belonging_tasks
 
 
 @add_command_handler("ユーザー名変更", UserAuthority.Editor)
@@ -73,10 +72,9 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
             belonging_groups_str = "なし"
         repply += "■参加グループ\n{}\n".format(belonging_groups_str)
         # 参加タスク
-        belonging_tasks = get_user_belonging_tasks(user)
-        if belonging_tasks.exists():
+        if user.belonging_tasks.exists():
             belonging_tasks_str = "、".join(
-                [task.name for task in belonging_tasks.all()])
+                [task.name for task in user.belonging_tasks.all()])
         else:
             belonging_tasks_str = "なし"
         repply += "■参加タスク\n{}".format(belonging_tasks_str)
