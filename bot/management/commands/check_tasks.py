@@ -12,11 +12,11 @@ from bot.models import Task
 
 class TaskCheckType(Enum):
     # 明日のタスクのリマインド
-    TommorowTasksRemind = auto()
+    TommorowTasksRemind = "TommorowTasksRemind"
     # 明日の重要タスクの確認
-    TommorowImportantTasksCheck = auto()
+    TommorowImportantTasksCheck = "TommorowImportantTasksCheck"
     # 重要タスクの事前確認
-    ImportantTasksPreCheck = auto()
+    ImportantTasksPreCheck = "ImportantTasksPreCheck"
 
 
 class Command(BaseCommand):
