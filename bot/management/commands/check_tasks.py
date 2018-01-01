@@ -53,7 +53,7 @@ class Command(BaseCommand):
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
                 mess = "\n".join(
-                    ["■{}({})".format(task.name, task.deadline.time()) for task in task_list])
+                    ["■{}({})".format(task.name, task.deadline.astimezone(TIMEZONE_DEFAULT).time()) for task in task_list])
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
                 mess = "おやすみなさい:D"
