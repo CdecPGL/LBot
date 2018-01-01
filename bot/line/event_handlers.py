@@ -74,6 +74,10 @@ def text_message_handler(event):
             if source_group:
                 line_util.check_and_add_member_to_group(
                     source_user, source_group)
+                # メンバーの追加を通知
+                line_settings.api.push_message(
+                    source_group.line_group.group_id,
+                    linebot.models.TextSendMessage(text="このグループ「{}」にユーザー「{}」を追加しました。".format(source_group.name, source_group.name)))
         except UserNotFoundError:
             if source_group:
                 source_user = line_util.register_user_by_line_user_id_in_group(
