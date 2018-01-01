@@ -48,12 +48,17 @@ class Command(BaseCommand):
                     else:
                         group_task_map[group.line_group.group_id] = [task]
 
+            def convert_deadline_to_string(deadline):
+                '''期限を時間分の文字列に変換'''
+                deadline = deadline.astimezone(TIMEZONE_DEFAULT)
+                return "{}:{}".format(deadline.hour, deadline.minute)
+
             for line_group_id, task_list in group_task_map.items():
                 mess = "こんばんは。明日が期限のタスクは以下のとおりだよ。"
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
                 mess = "\n".join(
-                    ["■{}({})".format(task.name, task.deadline.astimezone(TIMEZONE_DEFAULT).time()) for task in task_list])
+                    ["■{}(期限: {})".format(task.name, convert_deadline_to_string(task.deadline)) for task in task_list])
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
                 mess = "おやすみなさい:D"
