@@ -74,7 +74,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     try:
         task_deadline = datetime_parse(dead_line)
         # タイムゾーン情報がなかったらデフォルトのタイムゾーンで扱う
-        if task_deadline.tzinf is None:
+        if task_deadline.tzinfo is None:
             task_deadline = task_deadline.astimezone(TIMEZONE_DEFAULT)
         # UTCに変換
         task_deadline = task_deadline.astimezone(timezone.utc)
