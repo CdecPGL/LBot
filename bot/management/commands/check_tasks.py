@@ -87,6 +87,8 @@ class Command(BaseCommand):
                     task = task_list[0]
                     mess = "こんにちは。重要なタスク「{}」が明日の{}からあるよ。".format(
                         task.name, convert_deadline_to_string(task.deadline))
+                    line.api.push_message(
+                        line_group_id, TextSendMessage(text=mess))
                     mess = "みんなこのタスクに参加できる？"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
