@@ -9,6 +9,8 @@ from linebot.models import TextSendMessage
 from bot import line
 from bot.models import Task
 
+from bot.utilities import get_datetime_with_jst
+
 
 class TaskCheckType(Enum):
     # 明日のタスクのリマインド
@@ -36,9 +38,9 @@ class Command(BaseCommand):
             # 明日が期限のタスクを通知
             group_task_map = {}
             tommorow = datetime.date.today() + datetime.timedelta(days=1)
-            start_datetime = datetime.datetime(
+            start_datetime = get_datetime_with_jst(
                 tommorow.year, tommorow.month, tommorow.day, 0, 0, 0)
-            end_datetime = datetime.datetime(
+            end_datetime = get_datetime_with_jst(
                 tommorow.year, tommorow.month, tommorow.day, 23, 59, 59, 999999)
             for task in Task.objects.filter(deadline__range=(start_datetime, end_datetime)):
                 for group in task.groups.all():
@@ -49,12 +51,15 @@ class Command(BaseCommand):
 
             for line_group_id, task_list in group_task_map.items():
                 mess = "こんばんは。明日が期限のタスクは以下のとおりだよ。"
-                line.api.push_message(line_group_id, TextSendMessage(text=mess))
+                line.api.push_message(
+                    line_group_id, TextSendMessage(text=mess))
                 mess = "\n".join(
                     ["■{}({})".format(task.name, task.deadline.time()) for task in task_list])
-                line.api.push_message(line_group_id, TextSendMessage(text=mess))
+                line.api.push_message(
+                    line_group_id, TextSendMessage(text=mess))
                 mess = "おやすみなさい:D"
-                line.api.push_message(line_group_id, TextSendMessage(text=mess))
+                line.api.push_message(
+                    line_group_id, TextSendMessage(text=mess))
         elif task_check_type == TaskCheckType.TommorowImportantTasksRemind:
             pass
         elif task_check_type == TaskCheckType.ImportantTasksPreCheck:
