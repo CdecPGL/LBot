@@ -147,8 +147,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
         try:
             '''指定ユーザーのタスクをリストアップする'''
             user = db_util.get_user_by_name_from_database(name)
-            task_name_deadline_list = [(task.name, task.deadline) for task in get_user_belonging_tasks(
-                user).all() if check_task_watch_authority(user, task)]
+            task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all() if check_task_watch_authority(user, task)]
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
