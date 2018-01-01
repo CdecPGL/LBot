@@ -1,13 +1,12 @@
 '''定期的に実行するジョブを定義したファイル'''
 
-from datetime import timezone
+from datetime import datetime, timezone
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from django.core.management import call_command
 
-import bot.line_api as line_api
 from bot.management.commands.check_tasks import TaskCheckType
-from bot.utilities import get_datetime_with_jst
+from bot.utilities import TIMEZONE_DEFAULT
 
 
 def tommorow_tasks_remind_job():
@@ -28,13 +27,13 @@ def important_tasks_pre_check_job():
 if __name__ == "__main__":
     sc = BlockingScheduler()
     # 明日のタスク確認(毎日23:00に確認)
-    tommorow_remind_datetime = get_datetime_with_jst(
-        2000, 1, 1, 23).astimezone(timezone('UTC'))
+    tommorow_remind_datetime = datetime(
+        2000, 1, 1, 23, tzinfo=TIMEZONE_DEFAULT).astimezone(timezone.utc)
     sc.add_job(tommorow_tasks_remind_job, "cron", hour=tommorow_remind_datetime.hour,
                minute=tommorow_remind_datetime.minute)
     # 明日の重要タスク確認(毎日12:00に確認)
-    tommorow_important_check_datetime = get_datetime_with_jst(
-        2000, 1, 1, 12).astimezone(timezone('UTC'))
+    tommorow_important_check_datetime = datetime(
+        2000, 1, 1, 12, tzinfo=TIMEZONE_DEFAULT).astimezone(timezone.utc)
     sc.add_job(tommorow_important_tasks_check_job, "cron", hour=tommorow_important_check_datetime.hour,
                minute=tommorow_important_check_datetime.minute)
     # 重要タスクの事前確認(10分おきに確認)

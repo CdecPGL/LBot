@@ -1,6 +1,7 @@
 '''その他のメッセージコマンド'''
 
 from bot.authorities import UserAuthority
+from bot.utilities import TIMEZONE_DEFAULT
 
 from .message_command import CommandSource, add_command_handler
 
@@ -27,3 +28,13 @@ def test_command(command_source: CommandSource, *params)->(str, [str]):
     reply += "\n".join(["{}: {}".format(idx + 1, param)
                         for idx, param in enumerate(params)])
     return reply, []
+
+
+@add_command_handler("タイムゾーン確認", UserAuthority.Watcher)
+def check_timezone(command_source: CommandSource):
+    '''現在のデフォルトタイムゾーンを表示します。
+    タスクなどの日時の設定時に特に指定しなければ、デフォルトタイムゾーンが用いられます。
+    また、日時の憑依にもデフォルトタイムゾーンが用いられます。
+    ■コマンド引数
+    なし'''
+    return "■デフォルトタイムゾーン\n{}".format(TIMEZONE_DEFAULT)

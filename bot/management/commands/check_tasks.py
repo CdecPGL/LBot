@@ -1,15 +1,14 @@
 '''check_tasksコマンド'''
 
 import datetime
-from enum import Enum, auto
+from enum import Enum
 
 from django.core.management.base import BaseCommand
 from linebot.models import TextSendMessage
 
 from bot import line
 from bot.models import Task
-
-from bot.utilities import get_datetime_with_jst
+from bot.utilities import TIMEZONE_DEFAULT
 
 
 class TaskCheckType(Enum):
@@ -38,10 +37,10 @@ class Command(BaseCommand):
             # 明日が期限のタスクを通知
             group_task_map = {}
             tommorow = datetime.date.today() + datetime.timedelta(days=1)
-            start_datetime = get_datetime_with_jst(
-                tommorow.year, tommorow.month, tommorow.day, 0, 0, 0)
-            end_datetime = get_datetime_with_jst(
-                tommorow.year, tommorow.month, tommorow.day, 23, 59, 59, 999999)
+            start_datetime = datetime.datetime(
+                tommorow.year, tommorow.month, tommorow.day, 0, 0, 0, tzinfo=TIMEZONE_DEFAULT)
+            end_datetime = datetime.datetime(
+                tommorow.year, tommorow.month, tommorow.day, 23, 59, 59, 999999, tzinfo=TIMEZONE_DEFAULT)
             for task in Task.objects.filter(deadline__range=(start_datetime, end_datetime)):
                 for group in task.groups.all():
                     if group.line_group.group_id in group_task_map:

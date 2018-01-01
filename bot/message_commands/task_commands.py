@@ -1,5 +1,7 @@
 '''タスク関連のメッセージコマンド'''
 
+from datetime import datetime, timezone
+
 from dateutil.parser import parse as datetime_parse
 
 import bot.database_utilities as db_util
@@ -8,6 +10,7 @@ from bot.authorities import UserAuthority
 from bot.exceptions import (GroupNotFoundError, TaskNotFoundError,
                             UserNotFoundError)
 from bot.models import Task, User
+from bot.utilities import TIMEZONE_DEFAULT
 
 from .message_command import CommandSource, add_command_handler
 
@@ -70,7 +73,12 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     # 期限を変換
     try:
         task_deadline = datetime_parse(dead_line)
-        if task_deadline <= datetime.datetime.now():
+        # タイムゾーン情報がなかったらデフォルトのタイムゾーンで扱う
+        if task_deadline.tzinf is None:
+            task_deadline = task_deadline.astimezone(TIMEZONE_DEFAULT)
+        # UTCに変換
+        task_deadline = task_deadline.astimezone(timezone.utc)
+        if task_deadline <= datetime.utcnoww():
             return None, ["期限が過去になってるよ……"]
     except ValueError:
         return None, ["期限には日時をしてくださいいいいい！"]
@@ -126,7 +134,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         # データベースに保存
         new_task.save()
         reply = "「{}」タスクを作成し、期限を{}に設定しました。\n".format(
-            task_name, util.convert_datetime_to_string(task_deadline))
+            task_name, util.convert_datetime_in_default_timezone_to_string(task_deadline))
         reply += "■関連グループ\n{}\n".format("、".join(valid_group_name_list)
                                         if valid_group_name_list else "なし")
         reply += "■参加者\n{}".format("、".join(valid_participant_name_list))
@@ -154,7 +162,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
             if task_name_deadline_list:
-                tasks_str = "\n".join(["{}: {}".format(name, util.convert_datetime_to_string(
+                tasks_str = "\n".join(["{}: {}".format(name, util.convert_datetime_in_default_timezone_to_string(
                     deadline)) for name, deadline in task_name_deadline_list])
             else:
                 tasks_str = "なし"
@@ -172,7 +180,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
             if task_name_deadline_list:
-                tasks_str = "\n".join(["{}: {}".format(name, util.convert_datetime_to_string(
+                tasks_str = "\n".join(["{}: {}".format(name, util.convert_datetime_in_default_timezone_to_string(
                     deadline)) for name, deadline in task_name_deadline_list])
             else:
                 tasks_str = "なし"
@@ -218,7 +226,7 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
             reply += "■短縮名\n{}\n".format(
                 task.short_name if task.short_name else "未設定")
             reply += "■期限\n{}\n".format(
-                util.convert_datetime_to_string(task.deadline))
+                util.convert_datetime_in_default_timezone_to_string(task.deadline))
             # 参加者
             if task.is_participate_all_in_groups:
                 participants_str = "関連グループの全員"
