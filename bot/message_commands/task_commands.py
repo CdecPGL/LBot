@@ -67,9 +67,12 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
 
     # 重要度を取得
     try:
-        task_importance = TaskImportance(importance)
+        if importance:
+            task_importance = TaskImportance(importance)
+        else:
+            task_importance = TaskImportance.Middle
     except ValueError:
-        return None, ["無効な重要度が指定された……。重要度は「高」、「中」、「低」のいずれかだよ……"]
+        return None, ["無効な重要度が指定された……。重要度は「高」、「中」、「低」のいずれかだよ……。"]
 
     new_task = Task.objects.create(
         name=task_name, deadline=task_deadline, importance=task_importance.name)
