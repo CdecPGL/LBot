@@ -72,7 +72,7 @@ class Command(BaseCommand):
                 mess = "おやすみなさい:D"
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
-        elif task_check_type == TaskCheckType.TommorowImportantTasksRemind:
+        elif task_check_type == TaskCheckType.TommorowImportantTasksCheck:
             # 明日が期限の重要タスクを通知
             group_task_map = {}
             for task in Task.objects.filter(deadline__range=get_tommorow_range(), importance=TaskImportance.High.name):
@@ -93,7 +93,6 @@ class Command(BaseCommand):
                 mess = "おやすみなさい:D"
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
-            pass
         elif task_check_type == TaskCheckType.TasksPreRemindAndCheck:
             pass
         else:
