@@ -37,4 +37,4 @@ def check_timezone(command_source: CommandSource):
     また、日時の憑依にもデフォルトタイムゾーンが用いられます。
     ■コマンド引数
     なし'''
-    return "■デフォルトタイムゾーン\n{}".format(TIMEZONE_DEFAULT)
+    return "■デフォルトタイムゾーン\n{}".format(TIMEZONE_DEFAULT), []
