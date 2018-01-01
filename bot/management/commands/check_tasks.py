@@ -83,16 +83,30 @@ class Command(BaseCommand):
                         group_task_map[group.line_group.group_id] = [task]
 
             for line_group_id, task_list in group_task_map.items():
-                mess = "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。"
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
-                mess = "\n".join(
-                    ["■{}(期限: {})".format(task.name, convert_deadline_to_string(task.deadline)) for task in task_list])
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
-                mess = "おやすみなさい:D"
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
+                if len(task_list) == 1:
+                    task = task_list[0]
+                    mess = "こんにちは。重要なタスク「{}」が明日の{}からあるよ。".format(
+                        task.name, convert_deadline_to_string(task.deadline))
+                    mess = "みんなこのタスクに参加できる？"
+                    line.api.push_message(
+                        line_group_id, TextSendMessage(text=mess))
+                    mess = "参加できるなら「できる」、できないなら「できない」と答えてね。"
+                    line.api.push_message(
+                        line_group_id, TextSendMessage(text=mess))
+                else:
+                    mess = "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。"
+                    line.api.push_message(
+                        line_group_id, TextSendMessage(text=mess))
+                    mess = "\n".join(
+                        ["{}. {}(期限: {})".format(idx + 1, task.name, convert_deadline_to_string(task.deadline)) for idx, task in enumerate(task_list)])
+                    line.api.push_message(
+                        line_group_id, TextSendMessage(text=mess))
+                    mess = "このタスクに参加できるかできないか答えてね。"
+                    line.api.push_message(
+                        line_group_id, TextSendMessage(text=mess))
+                    mess = "例えば、1番のタスクに参加できて2番はできない場合は\n\n1できる\n2できない\n\nのように答えてね。"
+                    line.api.push_message(
+                        line_group_id, TextSendMessage(text=mess))
         elif task_check_type == TaskCheckType.TasksPreRemindAndCheck:
             pass
         else:

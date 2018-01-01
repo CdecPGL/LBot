@@ -16,11 +16,11 @@ def tommorow_tasks_remind_job():
 
 def tommorow_important_tasks_check_job():
     '''明日の重要タスクの確認を行うジョブ'''
-    call_command("check_tasks", TaskCheckType.TommorowTasksRemind)
+    call_command("check_tasks", TaskCheckType.TommorowImportantTasksCheck)
 
 
 def important_tasks_pre_check_job():
-    '''重要タスクの事前確認を行うジョブ'''
+    '''タスクの事前確認とリマインドを行うジョブ'''
     call_command("check_tasks", TaskCheckType.TasksPreRemindAndCheck)
 
 
@@ -36,6 +36,6 @@ if __name__ == "__main__":
         2000, 1, 1, 12, tzinfo=TIMEZONE_DEFAULT).astimezone(timezone.utc)
     sc.add_job(tommorow_important_tasks_check_job, "cron", hour=tommorow_important_check_datetime.hour,
                minute=tommorow_important_check_datetime.minute)
-    # 重要タスクの事前確認(10分おきに確認)
+    # タスクの事前確認(10分おきに確認)
     sc.add_job(important_tasks_pre_check_job, "interval", minute=10)
     sc.start()
