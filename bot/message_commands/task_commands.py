@@ -78,7 +78,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
             task_deadline = task_deadline.astimezone(TIMEZONE_DEFAULT)
         # UTCに変換
         task_deadline = task_deadline.astimezone(timezone.utc)
-        if task_deadline <= datetime.utcnoww():
+        if task_deadline <= datetime.utcnow():
             return None, ["期限が過去になってるよ……"]
     except ValueError:
         return None, ["期限には日時をしてくださいいいいい！"]
