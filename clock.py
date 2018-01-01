@@ -21,7 +21,7 @@ def tommorow_important_tasks_check_job():
 
 def important_tasks_pre_check_job():
     '''重要タスクの事前確認を行うジョブ'''
-    call_command("check_tasks", TaskCheckType.ImportantTasksPreCheck)
+    call_command("check_tasks", TaskCheckType.TasksPreRemindAndCheck)
 
 
 if __name__ == "__main__":
