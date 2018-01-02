@@ -53,10 +53,10 @@ class MessageCommandGroupBase(object):
     @classmethod
     def command_map(cls):
         '''コマンドマップを取得する'''
-        if not hasattr(cls, "_{}__command_map".format(cls.__name__)):
-            setattr(cls, "_{}__command_map".format(cls.__name__), {})
+        if not hasattr(cls, "impl_command_map"):
+            setattr(cls, "impl_command_map", {})
         print(cls)
-        return cls.__command_map
+        return cls.impl_command_map
 
     def execute_command(self, command_name: str, command_source: CommandSource, command_param_list: [str])->(bool, str):
         '''コマンドを実行する。
