@@ -95,6 +95,7 @@ __command_group_list = {}
 
 def register_command_groups():
     '''コマンドグループを登録する'''
+    global __command_group_list, __command_group_order_map
     print("{}, {}".format("1", MessageCommandGroupBase.__subclasses__()))
     command_groups = MessageCommandGroupBase.__subclasses__()
     for command_group_class in command_groups:
