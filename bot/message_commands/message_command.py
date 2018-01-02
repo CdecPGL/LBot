@@ -30,7 +30,10 @@ class MessageCommandGroupBase(object):
     __command_map = {}
 
     def __init__(self):
-        pass
+        # コマンドの提案を有効にするかどうか
+        self.enable_command_suggestion = False
+        # コマンドの提案が有効の場合に、提案を自動的に補正するかどうか
+        self.enable_auto_command_correction = False
 
     @classmethod
     def add_command(cls, command_name,  authority: UserAuthority):
@@ -52,41 +55,56 @@ class MessageCommandGroupBase(object):
         戻り値は(続けるかどうか,返信メッセージ)。'''
         command = normalize_command_string(command_name)
         command_map = self.__class__.__command_map
-        if command in command_map:
-            command_func, command_authority = command_map[command]
-            # 権限の確認
-            user_authority = UserAuthority[command_source.user_data.authority]
-            if user_authority.check(command_authority):
-                try:
-                    inspect.signature(command_func).bind(
-                        command_source, *command_param_list)
-                except TypeError:
-                    sys.stderr.write(
-                        "コマンドの実行でエラーが発生。({})\n".format(sys.exc_info()[1]))
-                    return False, "コマンド引数の数が不正です。\n■「{}」コマンドの使い方\n{}".format(command, inspect.getdoc(command_func))
-                reply, errors = command_func(
-                    command_source, *command_param_list)
-            else:
-                reply = None
-                errors = ["残念ながら権限がないよ。Youの権限：{}、コマンドの要求権限：{}。権限の変更はMasterユーザーに頼んでネ^_^".format(
-                    user_authority.name, command_authority.name)]
-            # 結果を返す
-            if reply is None:
-                errors.append("コマンド「{}」の実行に失敗しちゃった。。。".format(command))
-            else:
-                errors.append(reply)
-            return False, "\n".join(errors)
-        elif command is not None:
-            command_suggestions = [command_name for command_name in command_map.keys(
-            ) if difflib.SequenceMatcher(None, command, command_name).ratio() >= 0.7]
-            if len(command_suggestions) == 1:
-                return False, "{}？もしかして{}の間違いかなぁ？".format(command, "「" + command_suggestions[0] + "」")
-            elif command_suggestions:
-                return False, "{}？もしかして{}のどれかの間違いかなぁ？".format(command, "、".join(["「" + command_sug + "」" for command_sug in command_suggestions]))
+
+        # 指定コマンドがコマンドマップにない場合
+        if command not in command_map:
+            # コマンド文字列がから出ない場合は、設定に応じて提案したりする
+            if command is not None:
+                # コマンドの提案
+                if self.enable_command_suggestion:
+                    command_suggestions = [command_name for command_name in command_map.keys(
+                    ) if difflib.SequenceMatcher(None, command, command_name).ratio() >= 0.7]
+                    if len(command_suggestions) == 1:
+                        # コマンドの自動保管が有効なら提案コマンドをコマンドとする
+                        if self.enable_auto_command_correction:
+                            command = command_suggestions[0]
+                        # そうでない場合は提案を返信する
+                        else:
+                            return False, "{}？もしかして{}の間違いかなぁ？".format(command, "「" + command_suggestions[0] + "」")
+                    elif command_suggestions:
+                        return False, "{}？もしかして{}のどれかの間違いかなぁ？".format(command, "、".join(["「" + command_sug + "」" for command_sug in command_suggestions]))
+                    else:
+                        return True, None
+                else:
+                    return True, None
+            # 空の場合はコマンド実行しない
             else:
                 return True, None
+
+        command_func, command_authority = command_map[command]
+        # 権限の確認
+        user_authority = UserAuthority[command_source.user_data.authority]
+        if not user_authority.check(command_authority):
+            return False, "残念ながら権限がないよ。Youの権限：{}、コマンドの要求権限：{}。権限の変更はMasterユーザーに頼んでネ^_^".format(
+                user_authority.name, command_authority.name)
+
+        # コマンドの実行
+        try:
+            inspect.signature(command_func).bind(
+                command_source, *command_param_list)
+        except TypeError:
+            sys.stderr.write(
+                "コマンドの実行でエラーが発生。({})\n".format(sys.exc_info()[1]))
+            return False, "コマンド引数の数が不正です。\n■「{}」コマンドの使い方\n{}".format(command, inspect.getdoc(command_func))
+        reply, errors = command_func(
+            command_source, *command_param_list)
+
+        # 結果を返す
+        if reply is None:
+            errors.append("コマンド「{}」の実行に失敗しちゃった。。。".format(command))
         else:
-            return True, None
+            errors.append(reply)
+        return False, "\n".join(errors)
 
 
 __command_group_order_map = {}
