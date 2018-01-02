@@ -10,7 +10,7 @@ from ..message_command import CommandSource, MessageCommandGroupBase
 class StandardMessageCommandGroup(MessageCommandGroupBase):
     '''標準のメッセージコマンドグループ'''
     name = "標準"
-    order = 0
+    order = 100
 
     def __init__(self):
         super(StandardMessageCommandGroup, self).__init__()

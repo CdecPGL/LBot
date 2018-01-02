@@ -32,7 +32,7 @@ class MessageCommandGroupBase(object):
     def __init__(self):
         # コマンドの提案を有効にするかどうか
         self.enable_command_suggestion = False
-        # コマンドの提案が有効の場合に、提案を自動的に補正するかどうか
+        # コマンドの提案が有効の場合に、提案を自動的に補正するかどうか。有効の場合、提案が一つだけならそのコマンドが実行される。
         self.enable_auto_command_correction = False
 
     @classmethod
