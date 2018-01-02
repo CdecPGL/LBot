@@ -47,21 +47,22 @@ class MessageCommandGroupBase(object):
         返信がNoneの場合はコマンド失敗とみなす。'''
         def decorator(func):
             # __command_map変数を持っていなかったら追加する
-            if not hasattr(cls, "_{}__command_map".format(cls.__name__)):
-                setattr(cls, "_{}__command_map".format(cls.__name__), {})
-            cls.__command_map[command_name] = (func, authority)
+            cls.command_map()[command_name] = (func, authority)
         return decorator
 
     @classmethod
     def command_map(cls):
         '''コマンドマップを取得する'''
+        if not hasattr(cls, "_{}__command_map".format(cls.__name__)):
+            setattr(cls, "_{}__command_map".format(cls.__name__), {})
+        print(cls, cls.__command_map)
         return cls.__command_map
 
     def execute_command(self, command_name: str, command_source: CommandSource, command_param_list: [str])->(bool, str):
         '''コマンドを実行する。
         戻り値は(続けるかどうか,返信メッセージ)。'''
         command = normalize_command_string(command_name)
-        command_map = self.__class__.__command_map
+        command_map = self.__class__.command_map()
 
         # 指定コマンドがコマンドマップにない場合
         if command not in command_map:
