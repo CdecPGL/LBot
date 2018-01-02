@@ -24,7 +24,7 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
     command_map = StandardMessageCommandGroup.command_map()
     # コマンド一覧の作成
     command_list = ["■{}(権限：{})".format(command_name, command_authority.name)
-                    for command_name, (command_func, command_authority) in __command_map.items()]
+                    for command_name, (command_func, command_authority) in command_map.items()]
     # ターゲットが指定されていたらそのコマンドの詳細を表示
     if target_command_name:
         if target_command_name in command_map:
