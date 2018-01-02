@@ -1,7 +1,8 @@
+from enum import Enum
+
 from django.db import models
 
 from bot.authorities import UserAuthority
-from enum import Enum, auto
 
 # Create your models here.
 
@@ -11,6 +12,13 @@ class TaskImportance(Enum):
     High = "高"
     Middle = "中"
     Low = "低"
+
+
+# class RemindStatus(Enum):
+#     NotYet = 0
+#     Reminded = 1
+#     Checking = 2
+#     Checked = 3
 
 
 class Vocabulary(models.Model):
@@ -108,3 +116,10 @@ class Task(models.Model):
     # Asanaタスク。タスク管理者のみ変更可能
     asana_task = models.OneToOneField(
         AsanaTask, on_delete=models.SET_NULL, null=True)
+    # # 参加可能者
+    # joinable_members = models.ManyToManyField(
+    #     User, related_name="joinable_tasks")
+    # # 欠席者
+    # absent_members = models.ManyToManyField(User, related_name="absent_tasks")
+    # # タスクリマインダー
+    # tommorow_reminder =
