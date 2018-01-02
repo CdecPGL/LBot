@@ -29,7 +29,7 @@ def change_user_name_command(command_source: CommandSource, target_user_name: st
     return "ユーザー「{}」の名前を「{}」に変更しましたよ。".format(target_user_name, new_user_name), []
 
 
-@StandardMessageCommandGroup.add_command("誰", UserAuthority.Watcher)
+@StandardMessageCommandGroup.add_command("だれ", UserAuthority.Watcher)
 def check_user_command(command_source: CommandSource, target_user_name: str = None):
     '''ユーザーの情報を表示します。
     Master権限を持つユーザーか、本人のみ表示できます。

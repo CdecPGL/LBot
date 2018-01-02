@@ -92,7 +92,7 @@ class Command(BaseCommand):
                     mess = "みんなこのタスクに参加できる？"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
-                    mess = "参加できるなら「できる」、できないなら「できない」と答えてね。"
+                    mess = "参加できるなら「#できる」、できないなら「#できない」と答えてね。"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
                 else:
@@ -106,7 +106,7 @@ class Command(BaseCommand):
                     mess = "これらのタスクに参加できるかできないか答えてね。"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
-                    mess = "例えば、1番のタスクに参加できて2番はできない場合は\n\n1できる\n2できない\n\nのように答えてね。"
+                    mess = "例えば、1番のタスクに参加できて2番はできない場合は\n\n#できる\n1\n#できない\n2\n\nのように答えてね。"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
         elif task_check_type == TaskCheckType.TasksPreRemindAndCheck:

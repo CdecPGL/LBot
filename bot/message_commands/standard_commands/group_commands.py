@@ -39,7 +39,7 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
                 group = command_source.group_data
                 target_group_name = "ここのグループ"
             else:
-                return None, ["ここはグループじゃないのでグループ名を指定してね。"]
+                return "個人の会話場所。グループではない。", []
         if check_group_watch_authority(command_source.user_data, group):
             repply = "<グループ情報>\n"
             repply += "■グループ名\n{}\n".format(group.name)

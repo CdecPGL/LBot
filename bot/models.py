@@ -14,10 +14,15 @@ class TaskImportance(Enum):
     Low = "低"
 
 
-# class RemindStatus(Enum):
+# class ReminderStatus(Enum):
+#     '''リマインダー状況'''
+#     # 何もしてない
 #     NotYet = 0
+#     # リマインドはした
 #     Reminded = 1
+#     # メンバーに確認中
 #     Checking = 2
+#     # メンバーへの確認完了
 #     Checked = 3
 
 
@@ -112,7 +117,8 @@ class Task(models.Model):
     # タスクの参加者。タスク管理者のみ変更可能
     participants = models.ManyToManyField(User, related_name="belonging_tasks")
     # タスクの参加グループ。タスク管理者のみ変更可能
-    groups = models.ManyToManyField(Group, related_name="tasks")
+    group = models.ForeignKey(
+        Group, on_delete=models.SET_NULL, related_name="tasks", null=True)
     # Asanaタスク。タスク管理者のみ変更可能
     asana_task = models.OneToOneField(
         AsanaTask, on_delete=models.SET_NULL, null=True)

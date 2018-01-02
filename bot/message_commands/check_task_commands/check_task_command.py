@@ -12,7 +12,7 @@ class CheckTaskMessageCommandGroup(MessageCommandGroupBase):
     validate_in_initialize = False
     enable_command_suggestion = True
     enable_auto_command_correction = True
-    suggestion_word_match_rate_threshold = 0.75
+    suggestion_word_match_rate_threshold = 0.8
 
 
 @CheckTaskMessageCommandGroup.add_command("できる", UserAuthority.Watcher)

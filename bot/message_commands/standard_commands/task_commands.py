@@ -31,12 +31,12 @@ def check_task_watch_authority(user: User, task: Task):
         return True
     else:
         is_participant = task.participants.filter(id=user.id).exists()
-        is_related_member = task.groups.filter(members__id=user.id).exists()
+        is_related_member = task.group.filter(members__id=user.id).exists()
         return is_participant or is_related_member
 
 
 @StandardMessageCommandGroup.add_command("タスク追加", UserAuthority.Editor)
-def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, importance: str = None, participants: str=None, groups: str=None)->(str, [str]):
+def add_task_command(command_source: CommandSource, task_name: str, dead_line: str, importance: str = None, participants: str=None, group_name: str=None)->(str, [str]):
     '''タスクを追加します。
     メッセージの送信者がタスク管理者に設定されます。タスク管理者はそのタスクのあらゆる操作を実行できます。
     参加者はそのタスクの情報を参照することができ、期限が近づくと通知されます。
@@ -46,7 +46,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
     (3: 重要度。「高」、「中」、「低」のいずれか。重要度によって催促の激しさが変わる)
     (4: 、か,区切りで参加者を指定。デフォルトは送信者。「全員」で関連グループ全員を指定。
-    (5: 、か,区切りで参加グループを指定。デフォルトは送信元グループ)'''
+    (5: 参加グループを指定。デフォルトは送信元グループ)'''
     # すでに同名のタスクがないか確認
     if Task.objects.filter(name__exact=task_name).count():
         return None, ["タスク「{}」はすでに存在します……".format(task_name)]
@@ -80,27 +80,22 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     new_task.managers.add(task_create_user)
     try:
         # 参加グループ設定
-        valid_group_name_list = []
-        valid_group_list = []
+        related_group = None
         # グループが指定されていたらそれを設定
-        if groups:
-            group_name_list = util.split_command_paramater_strig(
-                groups)
-            for group_name in group_name_list:
-                try:
-                    related_group = db_util.get_group_by_name_from_database(
-                        group_name)
-                    valid_group_list.append(related_group)
-                    new_task.groups.add(related_group)
-                    valid_group_name_list.append(group_name)
-                except GroupNotFoundError:
-                    error_list.append(
-                        "グループ「{}」が見つからないため、参加グループに追加できませんでした。".format(group_name))
+        if group_name:
+            try:
+                related_group = db_util.get_group_by_name_from_database(
+                    group_name)
+                new_task.group = related_group
+            except GroupNotFoundError:
+                return None, ["指定されたグループ「{}」が見つりません。".format(group_name)]
         # グループが指定されていなくて送信元がグループならそれを設定
-        if not valid_group_name_list and command_source.group_data:
-            new_task.groups.add(command_source.group_data)
-            valid_group_list.append(command_source.group_data)
-            valid_group_name_list.append("このグループ")
+        elif command_source.group_data:
+            related_group = command_source.group_data
+            new_task.group = command_source.group_data
+            group_name = "このグループ"
+        else:
+            group_name = "なし"
 
         # 参加者設定
         valid_participant_name_list = []
@@ -113,10 +108,9 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
                 valid_participant_name_list.append(user.name)
         # 全員参加が指定されたら関連グループの全メンバーを参加させる
         if participants == EVERYONE_WORD:
-            if valid_group_name_list:
-                for group in valid_group_list:
-                    for member in group.members.all():
-                        add_participant(member)
+            if related_group:
+                for member in related_group.members.all():
+                    add_participant(member)
             else:
                 new_task.delete()
                 return None, ["参加者にグループメンバー全員が指定されたけど、グループが指定されてないよ。。。"]
@@ -139,8 +133,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         new_task.save()
         reply = "「{}」タスクを重要度「{}」で作成し、期限を{}に設定しました。\n".format(
             task_name, task_importance.value, util.convert_datetime_in_default_timezone_to_string(task_deadline))
-        reply += "■関連グループ\n{}\n".format("、".join(valid_group_name_list)
-                                        if valid_group_name_list else "なし")
+        reply += "■関連グループ\n{}\n".format(group_name)
         reply += "■参加者\n{}".format("、".join(valid_participant_name_list))
         return reply, error_list
     # 途中でエラーになったら作成したタスクは削除する
@@ -246,13 +239,8 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
             else:
                 participants_str = "なし"
             reply += "■参加者\n{}\n".format(participants_str)
-            # 関連グループ
-            if task.groups.exists():
-                groups_str = ",".join(
-                    [group.name for group in task.groups.all()])
-            else:
-                groups_str = "なし"
-            reply += "■関連グループ\n{}".format(groups_str)
+            reply += "■関連グループ\n{}".format(
+                task.group.name if task.group else "なし")
             return reply, []
         else:
             return None, ["タスクの閲覧権限がありません。タスクの閲覧はMasterユーザー、タスクの参加者、タスクの関連グループのメンバーのみ可能でーす。"]
