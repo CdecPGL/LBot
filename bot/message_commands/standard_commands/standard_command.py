@@ -15,7 +15,7 @@ class StandardMessageCommandGroup(MessageCommandGroupBase):
     def __init__(self):
         super(StandardMessageCommandGroup, self).__init__()
         # コマンドの提案を有効にするかどうか
-        self.enable_command_suggestion = True
+        self.enable_command_suggestion = False
         # コマンドの提案が有効の場合に、提案を自動的に補正するかどうか
         self.enable_auto_command_correction = False
 
