@@ -42,6 +42,11 @@ class MessageCommandGroupBase(object):
             cls.__command_map[command_name] = (func, authority)
         return decorator
 
+    @classmethod
+    def command_map(cls):
+        '''コマンドマップを取得する'''
+        return cls.__command_map
+
     def execute_command(self, command_source: CommandSource, command_name: str, command_param_list: [str])->(bool, str):
         '''コマンドを実行する。
         戻り値は(続けるかどうか,返信メッセージ)。'''
@@ -94,7 +99,7 @@ def register_command_groups():
     for command_group_class in command_groups:
         command_group_order = command_group_class.order
         command_group_name = command_group_class.name
-        __command_group_list[command_group_name] = command_group_order
+        __command_group_order_map[command_group_name] = command_group_order
         __command_group_list[command_group_order] = (
             True, command_group_class())
 
