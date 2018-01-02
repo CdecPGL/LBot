@@ -56,7 +56,6 @@ class MessageCommandGroupBase(object):
         # 基底クラスに固有のコマンドマップを使用するためにここで手動で作成する
         if not hasattr(cls, "impl_command_map"):
             setattr(cls, "impl_command_map", {})
-        print(cls)
         return cls.impl_command_map
 
     def execute_command(self, command_name: str, command_source: CommandSource, command_param_list: [str])->(bool, str):
@@ -162,7 +161,7 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
                 command_func, command_authority = command_group.command_map()[
                     target_command_name]
                 reply = "<{}コマンド「{}」の使い方>\n■必要権限\n{}\n■説明\n{}".format(
-                    command_group.name, target_command_name, command_authority.name, inspect.getdoc(command_func)), []
+                    command_group.name, target_command_name, command_authority.name, inspect.getdoc(command_func))
         if reply:
             return reply, []
         else:
