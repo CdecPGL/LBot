@@ -52,6 +52,7 @@ class MessageCommandGroupBase(object):
         戻り値は(続けるかどうか,返信メッセージ)。'''
         command = normalize_command_string(command_name)
         command_map = self.__class__.__command_map
+        print("{}, {}".format(self.__class__, self.__class__.__command_map))
         if command in command_map:
             command_func, command_authority = command_map[command]
             # 権限の確認
