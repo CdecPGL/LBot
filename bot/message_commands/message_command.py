@@ -109,8 +109,8 @@ def register_command_groups():
 def execute_message_command(command_name: str, command_source: CommandSource,  command_param_list: [str]):
     '''コマンドを実行する。戻り値は返信メッセージ。'''
     # コマンドグループを優先度準に並び替える
-    command_group_list = sorted(
-        __command_group_list.items(), key=lambda order_group: order_group[0])
+    command_group_list = [is_valid_command_grou for order, is_valid_command_grou in sorted(
+        __command_group_list.items(), key=lambda order_group: order_group[0])]
     for is_valid, command_group in command_group_list:
         # コマンドグループが無効なら飛ばす
         if not is_valid:
