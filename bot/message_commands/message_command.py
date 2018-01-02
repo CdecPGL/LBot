@@ -124,7 +124,7 @@ class SystemMessageCommand(MessageCommandGroupBase):
 
 
 @SystemMessageCommand.add_command("使い方", UserAuthority.Watcher)
-def help_command(command_source: CommandSource, target_command_name: str):
+def help_command(command_source: CommandSource, target_command_name: str = None):
     '''使い方を表示します。コマンドの指定がない場合はコマンドの一覧を表示します。
     ■コマンド引数
     (1: 使い方を見たいコマンド名)'''
