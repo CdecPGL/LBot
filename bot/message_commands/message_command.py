@@ -28,12 +28,18 @@ class MessageCommandGroupBase(object):
     '''メッセージコマンドグループの基底クラス
     コマンドグループはこれを継承し、クラス変数として"name"と"order"を定義すること。'''
     __command_map = {}
-
-    def __init__(self):
-        # コマンドの提案を有効にするかどうか
-        self.enable_command_suggestion = False
-        # コマンドの提案が有効の場合に、提案を自動的に補正するかどうか。有効の場合、提案が一つだけならそのコマンドが実行される。
-        self.enable_auto_command_correction = False
+    # コマンドグループの実行順序。これが小さいと先に実行される。子クラスで定義し直すこと
+    order = None
+    # グループ名。子クラスで定義し直すこと
+    name = None
+    # 初期化時にグループを有効化するかどうか
+    validate_in_initialize = False
+    # コマンドの提案を有効にするかどうか
+    enable_command_suggestion = False
+    # コマンドの提案が有効の場合に、提案を自動的に補正するかどうか。有効の場合、提案が一つだけならそのコマンドが実行される。
+    enable_auto_command_correction = False
+    # コマンド提案時の単語一致率閾値
+    suggestion_word_match_rate_threshold = 0.7
 
     @classmethod
     def add_command(cls, command_name,  authority: UserAuthority):
@@ -63,7 +69,7 @@ class MessageCommandGroupBase(object):
                 # コマンドの提案
                 if self.enable_command_suggestion:
                     command_suggestions = [command_name for command_name in command_map.keys(
-                    ) if difflib.SequenceMatcher(None, command, command_name).ratio() >= 0.7]
+                    ) if difflib.SequenceMatcher(None, command, command_name).ratio() >= self.suggestion_word_match_rate_threshold]
                     if len(command_suggestions) == 1:
                         # コマンドの自動保管が有効なら提案コマンドをコマンドとする
                         if self.enable_auto_command_correction:
@@ -107,6 +113,59 @@ class MessageCommandGroupBase(object):
         return False, "\n".join(errors)
 
 
+class SystemMessageCommand(MessageCommandGroupBase):
+    '''システムのメッセージコマンドグループ'''
+    name = "システム"
+    order = 0
+    validate_in_initialize = True
+    enable_command_suggestion = True
+    enable_auto_command_correction = False
+    suggestion_word_match_rate_threshold = 0.7
+
+
+@SystemMessageCommand.add_command("使い方", UserAuthority.Watcher)
+def help_command(command_source: CommandSource, target_command_name: str):
+    '''使い方を表示します。コマンドの指定がない場合はコマンドの一覧を表示します。
+    ■コマンド引数
+    (1: 使い方を見たいコマンド名)'''
+    # コマンドグループを優先度準に並び替える
+    command_group_list = [command_group for order, (is_valid, command_group) in sorted(
+        __command_group_list.items(), key=lambda order_group: order_group[0])]
+
+    def generate_command_list_string():
+        '''コマンドリスト文字列を生成'''
+        result = '<コマンド一覧>'
+        for command_group in command_group_list:
+            command_list = ["■{}(権限：{})".format(command_name, command_authority.name)
+                            for command_name, (command_func, command_authority) in command_group.command_map().items()]
+            result += "\n--{}コマンド--\n".format(command_group.name)
+            result += "\n".join(command_list)
+        return result
+
+    # ターゲットが指定されていたらそのコマンドの詳細を表示
+    if target_command_name:
+        reply = None
+        # コマンドグループの先頭から検索し、最初にヒットしたものを選ぶ
+        for command_group in command_group_list:
+            if target_command_name in command_group.command_map():
+                command_func, command_authority = command_group.command_map()[
+                    target_command_name]
+                reply = "<{}コマンド「{}」の使い方>\n■必要権限\n{}\n■説明\n{}".format(
+                    command_group.name, target_command_name, command_authority.name, inspect.getdoc(command_func)), []
+        if reply:
+            return reply, []
+        else:
+            return "「{}」コマンドは存在しません。\n{}".format(target_command_name, generate_command_list_string()), []
+
+    # 指定されていなかったらコマンドリストを表示
+    else:
+        reply = 'グループの場合は「#」を先頭に付けて、個人ラインの場合は何も付けずに、コマンドを指定して実行することができます。\n'
+        reply += 'コマンドでない文字列を指定した場合はてきとうな返事を返します。'
+        reply += 'また、「使い方」コマンドにコマンド名を指定することでそのコマンドの詳細説明を表示します。\n'
+        reply += generate_command_list_string()
+        return reply, []
+
+
 __command_group_order_map = {}
 __command_group_list = {}
 
@@ -119,13 +178,13 @@ def register_command_groups():
         command_group_name = command_group_class.name
         __command_group_order_map[command_group_name] = command_group_order
         __command_group_list[command_group_order] = (
-            True, command_group_class())
+            command_group_class.validate_in_initialize, command_group_class())
 
 
 def execute_message_command(command_name: str, command_source: CommandSource,  command_param_list: [str]):
     '''コマンドを実行する。戻り値は返信メッセージ。'''
     # コマンドグループを優先度準に並び替える
-    command_group_list = [is_valid_command_grou for order, is_valid_command_grou in sorted(
+    command_group_list = [is_valid_command_group for order, is_valid_command_group in sorted(
         __command_group_list.items(), key=lambda order_group: order_group[0])]
     for is_valid, command_group in command_group_list:
         # コマンドグループが無効なら飛ばす
