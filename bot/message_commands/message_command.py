@@ -46,8 +46,9 @@ class MessageCommandGroupBase(object):
         第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
         返信がNoneの場合はコマンド失敗とみなす。'''
         def decorator(func):
-            if not hasattr(cls, "__command_map"):
-                setattr(cls, "__command_map", {})
+            # __command_map変数を持っていなかったら追加する
+            if not hasattr(cls, "_{}__command_map".format(cls.__name__)):
+                setattr(cls, "_{}__command_map".format(cls.__name__))
             cls.__command_map[command_name] = (func, authority)
         return decorator
 
