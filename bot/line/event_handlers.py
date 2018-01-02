@@ -124,7 +124,8 @@ def text_message_handler(event):
         if command:
             # コマンド実行
             command_source = mess_cmd.CommandSource(source_user, source_group)
-            reply = mess_cmd.execute_command(command, command_source, params)
+            reply = mess_cmd.execute_message_command(
+                command, command_source, params)
             # グループの時は宛先を表示
             if source_group:
                 reply = "@{}\n{}".format(source_user.name, reply)

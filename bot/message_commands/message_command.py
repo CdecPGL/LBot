@@ -1,8 +1,8 @@
-'''メッセージによるコマンド関連'''
+'''メッセージコマンド'''
 
+import difflib
 import inspect
 import sys
-import difflib
 import unicodedata
 
 from bot.authorities import UserAuthority
@@ -18,82 +18,100 @@ class CommandSource(object):
         self.group_data = group_data
 
 
-__command_map = {}
-
-
-def add_command_handler(command_name, authority):
-    '''コマンドハンドラを追加するデコレータ。
-    第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
-    返信がNoneの場合はコマンド失敗とみなす。'''
-    def decorator(func):
-        decorator.__doc__ = func.__doc__
-        __command_map[command_name] = (func, authority)
-    return decorator
-
-
-@add_command_handler("使い方", UserAuthority.Watcher)
-def help_command(command_source: CommandSource, target_command_name: str = None)->(str, [str]):
-    '''使い方を表示します。コマンドの指定がない場合はコマンドの一覧を表示します。
-    ■コマンド引数
-    (1: 使い方を見たいコマンド名)'''
-    # コマンド一覧の作成
-    command_list = ["■{}(権限：{})".format(command_name, command_authority.name)
-                    for command_name, (command_func, command_authority) in __command_map.items()]
-    # ターゲットが指定されていたらそのコマンドの詳細を表示
-    if target_command_name:
-        if target_command_name in __command_map:
-            command_func, command_authority = __command_map[target_command_name]
-            return "<「{}」コマンドの使い方>\n■必要権限\n{}\n■説明\n{}".format(target_command_name, command_authority.name, inspect.getdoc(command_func)), []
-        else:
-            return "「{}」コマンドは存在しません。\n<コマンド一覧>\n{}".format(target_command_name, "\n".join(command_list)), []
-    # 指定されていなかったらコマンドリストを表示
-    else:
-        reply = 'グループの場合は「#」を先頭に付けて、個人ラインの場合は何も付けずに、コマンドを指定して実行することができます。\n'
-        reply += 'コマンドでない文字列を指定した場合はてきとうな返事を返します。'
-        reply += 'また、「使い方」コマンドにコマンド名を指定することでそのコマンドの詳細説明を表示します。\n'
-        reply += '<コマンド一覧>\n' + "\n".join(command_list)
-        return reply, []
-
-
 def normalize_command_string(command_string):
     '''コマンド文字列を正規化する'''
     command_string = unicodedata.normalize('NFKC', command_string)
     return command_string
 
 
-def execute_command(command: str, command_source: CommandSource, params: [str]):
-    '''コマンド実行。返信メッセージを返す'''
-    command = normalize_command_string(command)
-    if command in __command_map:
-        command_func, command_authority = __command_map[command]
-        # 権限の確認
-        user_authority = UserAuthority[command_source.user_data.authority]
-        if user_authority.check(command_authority):
-            try:
-                inspect.signature(command_func).bind(command_source, *params)
-            except TypeError:
-                sys.stderr.write(
-                    "コマンドの実行でエラーが発生。({})\n".format(sys.exc_info()[1]))
-                return "コマンド引数の数が不正です。\n■「{}」コマンドの使い方\n{}".format(command, inspect.getdoc(command_func))
-            reply, errors = command_func(command_source, *params)
+class MessageCommandGroupBase(object):
+    '''メッセージコマンドグループの基底クラス
+    コマンドグループはこれを継承し、クラス変数として"name"と"order"を定義すること。'''
+    __command_map = {}
+
+    def __init__(self):
+        pass
+
+    @classmethod
+    def add_command(cls, command_name,  authority: UserAuthority):
+        '''コマンドハンドラを追加するデコレータ。
+        第一引数にコマンド送信元、第二引数以降にコマンドパラメータを取り、(返信,エラーリスト)を戻り値とする関数を登録する。
+        返信がNoneの場合はコマンド失敗とみなす。'''
+        def decorator(func):
+            decorator.__doc__ = func.__doc__
+            cls.__command_map[command_name] = (func, authority)
+        return decorator
+
+    def execute_command(self, command_source: CommandSource, command_name: str, command_param_list: [str])->(bool, str):
+        '''コマンドを実行する。
+        戻り値は(続けるかどうか,返信メッセージ)。'''
+        command = normalize_command_string(command_name)
+        command_map = self.__class__.__command_map
+        if command in command_map:
+            command_func, command_authority = command_map[command]
+            # 権限の確認
+            user_authority = UserAuthority[command_source.user_data.authority]
+            if user_authority.check(command_authority):
+                try:
+                    inspect.signature(command_func).bind(
+                        command_source, *command_param_list)
+                except TypeError:
+                    sys.stderr.write(
+                        "コマンドの実行でエラーが発生。({})\n".format(sys.exc_info()[1]))
+                    return False, "コマンド引数の数が不正です。\n■「{}」コマンドの使い方\n{}".format(command, inspect.getdoc(command_func))
+                reply, errors = command_func(
+                    command_source, *command_param_list)
+            else:
+                reply = None
+                errors = ["残念ながら権限がないよ。Youの権限：{}、コマンドの要求権限：{}。権限の変更はMasterユーザーに頼んでネ^_^".format(
+                    user_authority.name, command_authority.name)]
+            # 結果を返す
+            if reply is None:
+                errors.append("コマンド「{}」の実行に失敗しちゃった。。。".format(command))
+            else:
+                errors.append(reply)
+            return False, "\n".join(errors)
+        elif command is not None:
+            command_suggestions = [command_name for command_name in command_map.keys(
+            ) if difflib.SequenceMatcher(None, command, command_name).ratio() >= 0.7]
+            if len(command_suggestions) == 1:
+                return False, "{}？もしかして{}の間違いかなぁ？".format(command, "「" + command_suggestions[0] + "」")
+            elif command_suggestions:
+                return False, "{}？もしかして{}のどれかの間違いかなぁ？".format(command, "、".join(["「" + command_sug + "」" for command_sug in command_suggestions]))
+            else:
+                return True, None
         else:
-            reply = None
-            errors = ["残念ながら権限がないよ。Youの権限：{}、コマンドの要求権限：{}。権限の変更はMasterユーザーに頼んでネ^_^".format(
-                user_authority.name, command_authority.name)]
-        # 結果を返す
-        if reply is None:
-            errors.append("コマンド「{}」の実行に失敗しちゃった。。。".format(command))
-        else:
-            errors.append(reply)
-        return "\n".join(errors)
-    elif command is not None:
-        command_suggestions = [command_name for command_name in __command_map.keys(
-        ) if difflib.SequenceMatcher(None, command, command_name).ratio() >= 0.7]
-        if len(command_suggestions) == 1:
-            return "{}？もしかして{}の間違いかなぁ？".format(command, "「" + command_suggestions[0] + "」")
-        elif command_suggestions:
-            return "{}？もしかして{}のどれかの間違いかなぁ？".format(command, "、".join(["「" + command_sug + "」" for command_sug in command_suggestions]))
-        else:
-            return generate_random_reply(command)
-    else:
-        return "コマンドが指定されていません"
+            return True, None
+
+
+__command_group_order_map = {}
+__command_group_list = {}
+
+
+def register_command_groups():
+    '''コマンドグループを登録する'''
+    command_groups = MessageCommandGroupBase.__subclasses__()
+    for command_group_class in command_groups:
+        command_group_order = command_group_class.order
+        command_group_name = command_group_class.name
+        __command_group_list[command_group_name] = command_group_order
+        __command_group_list[command_group_order] = (
+            True, command_group_class())
+
+
+def execute_message_command(command_source: CommandSource, command_name: str, command_param_list: [str]):
+    '''コマンドを実行する。戻り値は返信メッセージ。'''
+    command_group_list = sorted(
+        __command_group_list.items(), key=lambda order_group: order_group[0])
+    for is_valid, command_group in command_group_list:
+        # コマンドグループが無効なら飛ばす
+        if not is_valid:
+            continue
+        # コマンド実行
+        is_continue, reply = command_group.execute_command(
+            command_source, command_name, command_param_list)
+        # 続行しないなら最後の返信を返す
+        if not is_continue:
+            return reply
+    # 最後まで来たらてきとうな返事を返す
+    return generate_random_reply(command_name)
