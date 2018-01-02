@@ -53,6 +53,7 @@ class MessageCommandGroupBase(object):
     @classmethod
     def command_map(cls):
         '''コマンドマップを取得する'''
+        # 基底クラスに固有のコマンドマップを使用するためにここで手動で作成する
         if not hasattr(cls, "impl_command_map"):
             setattr(cls, "impl_command_map", {})
         print(cls)
@@ -135,7 +136,7 @@ def get_ordered_valid_command_group_list():
 
 
 @SystemMessageCommand.add_command("使い方", UserAuthority.Watcher)
-def help_command(command_source: CommandSource, target_command_name: str = None):
+def help_command(command_source: CommandSource, target_command_name: str = None)->(str, [str]):
     '''使い方を表示します。コマンドの指定がない場合はコマンドの一覧を表示します。
     ■コマンド引数
     (1: 使い方を見たいコマンド名)'''
@@ -165,7 +166,7 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
         if reply:
             return reply, []
         else:
-            return "「{}」コマンドは存在しません。\n{}".format(target_command_name, generate_command_list_string()), []
+            return None, ["「{}」コマンドは存在しません。\n{}".format(target_command_name, generate_command_list_string())]
 
     # 指定されていなかったらコマンドリストを表示
     else:
