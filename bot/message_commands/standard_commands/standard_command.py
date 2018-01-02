@@ -17,7 +17,7 @@ class StandardMessageCommandGroup(MessageCommandGroupBase):
         # コマンドの提案を有効にするかどうか
         self.enable_command_suggestion = True
         # コマンドの提案が有効の場合に、提案を自動的に補正するかどうか
-        self.enable_auto_command_correction = True
+        self.enable_auto_command_correction = False
 
 
 @StandardMessageCommandGroup.add_command("使い方", UserAuthority.Watcher)
