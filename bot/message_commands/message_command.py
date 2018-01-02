@@ -48,7 +48,7 @@ class MessageCommandGroupBase(object):
         def decorator(func):
             # __command_map変数を持っていなかったら追加する
             if not hasattr(cls, "_{}__command_map".format(cls.__name__)):
-                setattr(cls, "_{}__command_map".format(cls.__name__))
+                setattr(cls, "_{}__command_map".format(cls.__name__), {})
             cls.__command_map[command_name] = (func, authority)
         return decorator
 
