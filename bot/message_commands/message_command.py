@@ -47,7 +47,7 @@ class MessageCommandGroupBase(object):
         '''コマンドマップを取得する'''
         return cls.__command_map
 
-    def execute_command(self, command_source: CommandSource, command_name: str, command_param_list: [str])->(bool, str):
+    def execute_command(self, command_name: str, command_source: CommandSource, command_param_list: [str])->(bool, str):
         '''コマンドを実行する。
         戻り値は(続けるかどうか,返信メッセージ)。'''
         command = normalize_command_string(command_name)
@@ -104,8 +104,9 @@ def register_command_groups():
             True, command_group_class())
 
 
-def execute_message_command(command_source: CommandSource, command_name: str, command_param_list: [str]):
+def execute_message_command(command_name: str, command_source: CommandSource,  command_param_list: [str]):
     '''コマンドを実行する。戻り値は返信メッセージ。'''
+    # コマンドグループを優先度準に並び替える
     command_group_list = sorted(
         __command_group_list.items(), key=lambda order_group: order_group[0])
     for is_valid, command_group in command_group_list:
@@ -114,7 +115,7 @@ def execute_message_command(command_source: CommandSource, command_name: str, co
             continue
         # コマンド実行
         is_continue, reply = command_group.execute_command(
-            command_source, command_name, command_param_list)
+            command_name, command_source, command_param_list)
         # 続行しないなら最後の返信を返す
         if not is_continue:
             return reply
