@@ -4,7 +4,7 @@ import inspect
 
 from bot.authorities import UserAuthority
 
-from ..message_command import MessageCommandGroupBase
+from ..message_command import CommandSource, MessageCommandGroupBase
 
 
 class StandardMessageCommandGroup(MessageCommandGroupBase):
