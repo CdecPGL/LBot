@@ -73,9 +73,9 @@ class Command(BaseCommand):
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
         elif task_check_type == TaskCheckType.TommorowImportantTasksCheck:
-            # 明日が期限の重要タスクを通知
+            # 明日が期限の重要タスクを通知(グループのみ)
             group_task_map = {}
-            for task in Task.objects.filter(deadline__range=get_tommorow_range(), importance=TaskImportance.High.name):
+            for task in Task.objects.filter(deadline__range=get_tommorow_range(), importance=TaskImportance.High.name, group__isnull=False):
                 group = task.group
                 if group.line_group.group_id in group_task_map:
                     group_task_map[group.line_group.group_id].append(task)
