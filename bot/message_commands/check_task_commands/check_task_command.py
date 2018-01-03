@@ -98,10 +98,20 @@ def set_participate_state(command_source: CommandSource, target_task_number: str
             reply = "「{}」に{}するんだね。了解！\n".format(
                 task.name, "参加" if is_participate else "欠席")
             reply += "\nタスク「{}」の参加確認が完了しました。\n".format(task.name)
-            reply += "<参加可能者>\n{}\n".format(
-                "、".join([joinable.name for joinable in task.joinable_members.all()]))
-            reply += "<欠席者>\n{}".format(
-                "、".join([absent.name for absent in task.absent_members.all()]))
+            # 参加可能者
+            if task.joinable_members.exists():
+                joinable_str = "、".join(
+                    [joinable.name for joinable in task.joinable_members.all()])
+            else:
+                joinable_str = "なし"
+            reply += "<参加可能者>\n{}\n".format(joinable_str)
+            # 欠席者
+            if task.absent_members.exists():
+                absent_str = "、".join(
+                    [absent.name for absent in task.absent_members.all()])
+            else:
+                absent_str = "なし"
+            reply += "<欠席者>\n{}".format(absent_str)
             return reply, []
     else:
         target_check_task.save()
