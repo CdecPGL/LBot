@@ -7,7 +7,8 @@ from django.core.management.base import BaseCommand
 from linebot.models import TextSendMessage
 
 from bot import line
-from bot.models import Task, TaskImportance
+from bot.message_commands import enable_messege_command_group
+from bot.models import Task, TaskImportance, TaskJoinCheckJob
 from bot.utilities import TIMEZONE_DEFAULT
 
 
@@ -83,8 +84,25 @@ class Command(BaseCommand):
                         group_task_map[group.line_group.group_id] = [task]
 
             for line_group_id, task_list in group_task_map.items():
-                if len(task_list) == 1:
-                    task = task_list[0]
+                # 確認タスクを追加
+                for task in task_list:
+                    task_check = TaskJoinCheckJob.objects.filter(task=task)
+                    # すでに登録されていたら飛ばす
+                    if not task_check.exists():
+                        # タスク確認の登録(テストで期限を12時間後にする)
+                        TaskJoinCheckJob.objects.create(
+                            group=task.group, task=task, check_number=100000, deadline=datetime.datetime.now() + datetime.timedelta(hours=12))
+
+                # 確認タスク一覧を作成
+                important_checking_tasks = TaskJoinCheckJob.objects.filter(
+                    group__line_group__group_id=line_group_id, task__importance=TaskImportance.High.name)
+                ordered_checking_task_list = [check_task for check_task in sorted(
+                    important_checking_tasks.all(), key=lambda check_task: check_task.check_number)]
+
+                # 通知
+                if len(ordered_checking_task_list) == 1:
+                    check_task = ordered_checking_task_list[0]
+                    task = check_task.task
                     mess = "こんにちは。\n重要なタスク「{}」が明日の{}からあるよ。".format(
                         task.name, convert_deadline_to_string(task.deadline))
                     line.api.push_message(
@@ -100,7 +118,7 @@ class Command(BaseCommand):
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
                     mess = "\n".join(
-                        ["{}. {}(期限: {})".format(idx + 1, task.name, convert_deadline_to_string(task.deadline)) for idx, task in enumerate(task_list)])
+                        ["{}. {}(期限: {})".format(check_task.check_number, check_task.task.name, convert_deadline_to_string(check_task.task.deadline)) for check_task in ordered_checking_task_list])
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
                     mess = "これらのタスクに参加できるかできないか答えてね。"
@@ -109,6 +127,9 @@ class Command(BaseCommand):
                     mess = "例えば、1番のタスクに参加できて2番はできない場合は\n\n#できる\n1\n#できない\n2\n\nのように答えてね。"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
+
+                # タスク参加確認を開始
+                enable_messege_command_group("タスク参加確認")
         elif task_check_type == TaskCheckType.TasksPreRemindAndCheck:
             pass
         else:

@@ -131,7 +131,10 @@ class TaskJoinCheckJob(models.Model):
     group = models.ForeignKey(
         Group, on_delete=models.CASCADE, related_name="task_checks")
     # 対象のタスク
-    task = models.OneToOneField(Task, on_delete=models.CASCADE)
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, unique=True)
+    # 確認が取れたユーザー
+    checked_users = models.ManyToManyField(
+        User, related_name="checked_task_join_check_job")
     # グループ内でのタスクチェック番号
     check_number = models.PositiveIntegerField()
     # チェックの期限
