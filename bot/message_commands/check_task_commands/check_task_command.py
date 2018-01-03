@@ -3,7 +3,7 @@
 import sys
 
 from bot.authorities import UserAuthority
-from bot.models import TaskJoinCheckJob
+from bot.models import TaskJoinCheckJob, User
 from bot.utilities import remove_from_comma_separeted_string
 
 from ..message_command import CommandSource, MessageCommandGroupBase
