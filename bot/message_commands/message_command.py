@@ -8,6 +8,7 @@ import unicodedata
 from bot.authorities import UserAuthority
 from bot.models import Group, User
 from bot.reply_generators import generate_random_reply
+from bot.utilities import split_command_paramater_strig
 
 
 class CommandSource(object):
@@ -129,9 +130,17 @@ __command_group_order_map = {}
 __command_group_list = {}
 
 
-def get_ordered_valid_command_group_list():
+def get_ordered_valid_command_group_list(command_source: CommandSource):
     '''順番に並んだ有効なコマンドグループリストを取得する'''
-    return [command_group for order, (is_valid, command_group) in sorted(__command_group_list.items(), key=lambda order_group: order_group[0]) if is_valid]
+    # 送信元がグループの場合はそのグループの、個人の場合はそのユーザーの有効コマンドグループを取得
+    if command_source.group_data:
+        valid_message_command_groups = command_source.group_data.valid_message_command_groups
+    else:
+        valid_message_command_groups = command_source.user_data.valid_message_command_groups
+    valid_message_command_group_list = split_command_paramater_strig(
+        valid_message_command_groups)
+    # 定義かデータベースで有効指定されているなら有効とする
+    return [command_group for order, (is_valid, command_group) in sorted(__command_group_list.items(), key=lambda order_group: order_group[0]) if is_valid or command_group.name in valid_message_command_group_list]
 
 
 @SystemMessageCommand.add_command("使い方", UserAuthority.Watcher)
@@ -140,7 +149,8 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
     ■コマンド引数
     (1: 使い方を見たいコマンド名)'''
     # コマンドグループを優先度準に並び替える
-    valid_command_group_list = get_ordered_valid_command_group_list()
+    valid_command_group_list = get_ordered_valid_command_group_list(
+        command_source)
 
     def generate_command_list_string():
         '''コマンドリスト文字列を生成'''
@@ -187,30 +197,11 @@ def register_command_groups():
             command_group_class.validate_in_initialize, command_group_class())
 
 
-def enable_messege_command_group(group_name: str)->bool:
-    '''メッセージコマンドグループを有効化する'''
-    if group_name in __command_group_order_map:
-        __command_group_list[__command_group_order_map[group_name]][0] = True
-        return True
-    else:
-        sys.stderr.write("存在しないコマンドグループ「{}」が指定されました。\n".format(group_name))
-        return False
-
-
-def disable_messege_command_group(group_name: str)->bool:
-    '''メッセージコマンドグループを無効化する'''
-    if group_name in __command_group_order_map:
-        __command_group_list[__command_group_order_map[group_name]][0] = False
-        return True
-    else:
-        sys.stderr.write("存在しないコマンドグループ「{}」が指定されました。\n".format(group_name))
-        return False
-
-
 def execute_message_command(command_name: str, command_source: CommandSource,  command_param_list: [str]):
     '''コマンドを実行する。戻り値は返信メッセージ。'''
     # コマンドグループを優先度準に並び替える
-    valid_command_group_list = get_ordered_valid_command_group_list()
+    valid_command_group_list = get_ordered_valid_command_group_list(
+        command_source)
 
     for command_group in valid_command_group_list:
         # コマンド実行

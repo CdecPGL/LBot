@@ -63,6 +63,8 @@ class User(models.Model):
     # 権限。Masterユーザーのみ変更可能
     authority = models.CharField(
         max_length=16, choices=get_choices_from_enum(UserAuthority))
+    # 有効なメッセージコマンドグループ。カンマ区切りで複数指定
+    valid_message_command_groups = models.CharField(max_length=256, default="")
 
 
 class LineGroup(models.Model):
@@ -90,6 +92,8 @@ class Group(models.Model):
     # AsanaTeam。グループ管理者のみ変更可能
     asana_team = models.OneToOneField(
         AsanaTeam, on_delete=models.SET_NULL, null=True)
+    # 有効なメッセージコマンドグループ。カンマ区切りで複数指定
+    valid_message_command_groups = models.CharField(max_length=256, default="")
 
 
 class AsanaTask(models.Model):
