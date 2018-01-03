@@ -112,7 +112,11 @@ class Command(BaseCommand):
                         task.name, convert_deadline_to_string(task.deadline))
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
-                    mess = "みんなこのタスクに参加できる？"
+                    mess = "メンバーは{}。".format(
+                        "".join(["「{}」".format(member.name) for member in task.participants.all()]))
+                    line.api.push_message(
+                        line_group_id, TextSendMessage(text=mess))
+                    mess = "メンバーはこのタスクに参加できる？"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
                     mess = "参加できるなら「#できる」、できないなら「#できない」と答えてね。"
