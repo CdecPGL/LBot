@@ -86,13 +86,17 @@ class Command(BaseCommand):
                 group = line.utilities.get_group_by_line_group_id_from_database(
                     line_group_id)
                 # 確認タスクを追加
+                check_number_count = 1
                 for task in task_list:
                     task_check = TaskJoinCheckJob.objects.filter(task=task)
                     # すでに登録されていたら飛ばす
                     if not task_check.exists():
+                        # 空いている確認番号を探す
+                        while TaskJoinCheckJob.objects.filter(check_number=check_number_count).exists():
+                            check_number_count += 1
                         # タスク確認の登録(テストで期限を12時間後にする)
                         TaskJoinCheckJob.objects.create(
-                            group=task.group, task=task, check_number=100000, deadline=datetime.datetime.now() + datetime.timedelta(hours=12))
+                            group=task.group, task=task, check_number=check_number_count, deadline=datetime.datetime.now() + datetime.timedelta(hours=12))
 
                 # 確認タスク一覧を作成
                 important_checking_tasks = TaskJoinCheckJob.objects.filter(
