@@ -140,6 +140,8 @@ def get_ordered_valid_command_group_list(command_source: CommandSource):
     valid_message_command_group_list = split_command_paramater_strig(
         valid_message_command_groups)
     # 定義かデータベースで有効指定されているなら有効とする
+    print("{}, {}".format(valid_message_command_groups,
+                          valid_message_command_group_list))
     return [command_group for order, (is_valid, command_group) in sorted(__command_group_list.items(), key=lambda order_group: order_group[0]) if is_valid or command_group.name in valid_message_command_group_list]
 
 
