@@ -7,9 +7,8 @@ from django.core.management.base import BaseCommand
 from linebot.models import TextSendMessage
 
 from bot import line
-from bot.message_commands import enable_messege_command_group
 from bot.models import Task, TaskImportance, TaskJoinCheckJob
-from bot.utilities import TIMEZONE_DEFAULT
+from bot.utilities import TIMEZONE_DEFAULT, add_to_comma_separeted_string
 
 
 def convert_deadline_to_string(deadline):
@@ -84,6 +83,8 @@ class Command(BaseCommand):
                     group_task_map[group.line_group.group_id] = [task]
 
             for line_group_id, task_list in group_task_map.items():
+                group = line.utilities.get_group_by_line_group_id_from_database(
+                    line_group_id)
                 # 確認タスクを追加
                 for task in task_list:
                     task_check = TaskJoinCheckJob.objects.filter(task=task)
@@ -95,7 +96,7 @@ class Command(BaseCommand):
 
                 # 確認タスク一覧を作成
                 important_checking_tasks = TaskJoinCheckJob.objects.filter(
-                    group__line_group__group_id=line_group_id, task__importance=TaskImportance.High.name)
+                    group=group, task__importance=TaskImportance.High.name)
                 ordered_checking_task_list = [check_task for check_task in sorted(
                     important_checking_tasks.all(), key=lambda check_task: check_task.check_number)]
 
@@ -129,7 +130,9 @@ class Command(BaseCommand):
                         line_group_id, TextSendMessage(text=mess))
 
                 # タスク参加確認を開始
-                enable_messege_command_group("タスク参加確認")
+                group.valid_message_command_groups = add_to_comma_separeted_string(
+                    group.valid_message_command_groups, "タスク参加確認")
+                group.save()
         elif task_check_type == TaskCheckType.TasksPreRemindAndCheck:
             pass
         else:
