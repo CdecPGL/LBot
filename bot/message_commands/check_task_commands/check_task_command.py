@@ -43,7 +43,7 @@ def set_participate_state(command_source: CommandSource, target_task_number: str
         try:
             target_check_task = checking_tasks.get(
                 check_number=target_task_number)
-        except TaskJoinCheckJob.ObjectDoesNotExist:
+        except TaskJoinCheckJob.DoesNotExist:
             return None, ["指定番号の確認中タスクは存在しないよ。\n{}".format("\n".join(checking_task_list))]
         except TaskJoinCheckJob.MultipleObjectsReturned:
             sys.stderr.write("グループ「{}」のタスク確認ジョブで確認番号「{}」の重複が有ります。\n".format(
@@ -53,7 +53,7 @@ def set_participate_state(command_source: CommandSource, target_task_number: str
         # 番号が指定されていない場合、確認中タスクが一つならそれを対象にする
         try:
             target_check_task = checking_tasks.get()
-        except TaskJoinCheckJob.ObjectDoesNotExist:
+        except TaskJoinCheckJob.DoesNotExist:
             sys.stderr.write("グループ「{}」のタスク確認ジョブ(checking_tasks)が存在しません。\n".format(
                 command_source.group_data.name))
             return None, ["内部エラー(タスク確認ジョブが存在しない)"]
@@ -72,7 +72,7 @@ def set_participate_state(command_source: CommandSource, target_task_number: str
         # 欠席登録されていたら除去
         try:
             task.absent_members.remove(task.absent_members.get(id=user.id))
-        except User.ObjectDoesNotExist:
+        except User.DoesNotExist:
             pass
     else:
         # 欠席登録されていなかったらする
@@ -80,7 +80,7 @@ def set_participate_state(command_source: CommandSource, target_task_number: str
         # 参加登録されていたら除去
         try:
             task.joinable_members.remove(task.joinable_members.get(id=user.id))
-        except User.ObjectDoesNotExist:
+        except User.DoesNotExist:
             pass
     # データベースの変更を保存
     task.save()
