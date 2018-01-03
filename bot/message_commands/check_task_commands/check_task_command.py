@@ -95,7 +95,7 @@ def set_participate_state(command_source: CommandSource, target_task_number: str
             command_source.group_data.valid_message_command_groups = remove_from_comma_separeted_string(
                 command_source.group_data.valid_message_command_groups, "タスク参加確認")
             command_source.group_data.save()
-            reply = "「{}」に{}するんだね。了解！".format(
+            reply = "「{}」に{}するんだね。了解！\n".format(
                 task.name, "参加" if is_participate else "欠席")
             reply += "\nタスク「{}」の参加確認が完了しました。\n".format(task.name)
             reply += "<参加可能者>\n{}\n".format(
