@@ -19,7 +19,7 @@ class CheckTaskMessageCommandGroup(MessageCommandGroupBase):
     suggestion_word_match_rate_threshold = 0.8
 
 
-def set_participate_state(command_source: CommandSource, target_task_number: str, is_participate: bool)->(str, [str]):
+def set_participate_state(command_source: CommandSource, target_check_number_or_name: str, is_participate: bool)->(str, [str]):
     '''タスクへの参加不参加を設定する'''
     # コマンドが実行できるかどうか確認
     if not command_source.group_data:
@@ -39,15 +39,20 @@ def set_participate_state(command_source: CommandSource, target_task_number: str
     checking_task_list = ["{}: {}".format(check_task.check_number, check_task.task.name) for check_task in sorted(
         checking_tasks.all(), key=lambda check_task: check_task.check_number)]
     # 番号が指定されている場合は、指定番号の確認中タスクを探す
-    if target_task_number:
+    if target_check_number_or_name:
         try:
             target_check_task = checking_tasks.get(
-                check_number=target_task_number)
+                check_number=target_check_number_or_name)
         except TaskJoinCheckJob.DoesNotExist:
-            return None, ["指定番号の確認中タスクは存在しないよ。\n{}".format("\n".join(checking_task_list))]
+            # 番号で当てはまらなかったらタスク名で試行する
+            try:
+                target_check_task = checking_tasks.get(
+                    task__name=target_check_number_or_name)
+            except TaskJoinCheckJob.DoesNotExist:
+                return None, ["指定番号又は名前の確認中タスクは存在しないよ。\n{}".format("\n".join(checking_task_list))]
         except TaskJoinCheckJob.MultipleObjectsReturned:
-            sys.stderr.write("グループ「{}」のタスク確認ジョブで確認番号「{}」の重複が有ります。\n".format(
-                command_source.group_data.name, target_task_number))
+            sys.stderr.write("グループ「{}」のタスク確認ジョブで確認番号「{}」の重複があります。\n".format(
+                command_source.group_data.name, target_check_number_or_name))
             return None, ["内部エラー(タスク確認ジョブの確認番号重複)"]
     else:
         # 番号が指定されていない場合、確認中タスクが一つならそれを対象にする
@@ -122,7 +127,7 @@ def set_participate_state(command_source: CommandSource, target_task_number: str
 def participate_command(command_source: CommandSource, target_task_number: str=None)->(str, [str]):
     '''タスクに参加できることを伝えます。
     ■コマンド引数
-    (1: 対象のタスク番号。対象タスクが一つしかない場合は省略可能)'''
+    (1: 対象の確認番号かタスク名。対象タスクが一つしかない場合は省略可能)'''
     return set_participate_state(command_source, target_task_number, True)
 
 
@@ -130,5 +135,5 @@ def participate_command(command_source: CommandSource, target_task_number: str=N
 def absent_command(command_source: CommandSource, target_task_number: str=None):
     '''タスクに参加できないことを伝えます。
     ■コマンド引数
-    (1: 対象のタスク番号。対象タスクが一つしかない場合は省略可能)'''
+    (1: 対象の確認番号かタスク名。対象タスクが一つしかない場合は省略可能)'''
     return set_participate_state(command_source, target_task_number, False)

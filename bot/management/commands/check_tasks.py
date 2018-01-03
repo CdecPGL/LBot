@@ -112,11 +112,8 @@ class Command(BaseCommand):
                         task.name, convert_deadline_to_string(task.deadline))
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
-                    mess = "メンバーは{}。".format(
+                    mess = "メンバーの{}はこのタスクに参加できる？".format(
                         "".join(["「{}」".format(member.name) for member in task.participants.all()]))
-                    line.api.push_message(
-                        line_group_id, TextSendMessage(text=mess))
-                    mess = "メンバーはこのタスクに参加できる？"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
                     mess = "参加できるなら「#できる」、できないなら「#できない」と答えてね。"
@@ -126,14 +123,20 @@ class Command(BaseCommand):
                     mess = "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
-                    mess = "\n".join(
-                        ["{}. {}(期限: {})".format(check_task.check_number, check_task.task.name, convert_deadline_to_string(check_task.task.deadline)) for check_task in ordered_checking_task_list])
+                    # タスク一覧を作成
+                    mess = ""
+                    for check_task in ordered_checking_task_list:
+                        mess += "{}. {}(期限: {})\n".format(check_task.check_number, check_task.task.name,
+                                                          convert_deadline_to_string(check_task.task.deadline))
+                        mess += "メンバー：{}\n".format(
+                            "、".join([member.name for member in check_task.task.participants.all()]))
+                    mess = mess.rstrip("\n")
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
                     mess = "これらのタスクに参加できるかできないか答えてね。"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
-                    mess = "例えば、1番のタスクに参加できて2番はできない場合は\n\n#できる\n1\n#できない\n2\n\nのように答えてね。"
+                    mess = "例えば、1番のタスクに参加できて2番はできない場合は\n======\n#できる\n1\n======\n#できない\n2\n======\nのように答えてね。"
                     line.api.push_message(
                         line_group_id, TextSendMessage(text=mess))
 
