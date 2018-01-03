@@ -88,7 +88,7 @@ def set_participate_state(command_source: CommandSource, target_task_number: str
     # はじめての確認なら確認済みユーザーに追加
     target_check_task.checked_users.add(user)
     # 全員の確認が取れていたら確認を終了
-    if task.members.count() == target_check_task.checked_users.count():
+    if task.participants.count() == target_check_task.checked_users.count():
         target_check_task.delete()
         # 最後の確認タスクだったら、タスクの確認を終了する
         if len(checking_task_list) == 1:
