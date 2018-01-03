@@ -88,6 +88,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
                     group_name)
                 new_task.group = related_group
             except GroupNotFoundError:
+                new_task.delete()
                 return None, ["指定されたグループ「{}」が見つりません。".format(group_name)]
         # グループが指定されていなくて送信元がグループならそれを設定
         elif command_source.group_data:

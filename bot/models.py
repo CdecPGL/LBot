@@ -26,6 +26,11 @@ class TaskImportance(Enum):
 #     Checked = 3
 
 
+def get_choices_from_enum(source_enum):
+    '''列挙体から選択肢を取得'''
+    return [(item.name, item.name) for item in source_enum]
+
+
 class Vocabulary(models.Model):
     '''ボキャブラリデータベース'''
     # 単語
@@ -47,11 +52,6 @@ class AsanaUser(models.Model):
 
 class User(models.Model):
     '''ユーザーデータベース'''
-    AUTHORITY_CHOICES = (
-        (UserAuthority.Master.name, UserAuthority.Master.name),
-        (UserAuthority.Editor.name, UserAuthority.Editor.name),
-        (UserAuthority.Watcher.name, UserAuthority.Watcher.name),
-    )
     # ユーザー名。そのユーザー自身のみ設定可能
     name = models.CharField(max_length=64, unique=True)
     # LINEのユーザー情報。そのユーザーのみ設定可能
@@ -61,7 +61,8 @@ class User(models.Model):
     asana_user = models.OneToOneField(
         AsanaUser, on_delete=models.SET_NULL, null=True)
     # 権限。Masterユーザーのみ変更可能
-    authority = models.CharField(max_length=16, choices=AUTHORITY_CHOICES)
+    authority = models.CharField(
+        max_length=16, choices=get_choices_from_enum(UserAuthority))
 
 
 class LineGroup(models.Model):
@@ -98,11 +99,6 @@ class AsanaTask(models.Model):
 
 class Task(models.Model):
     '''タスクデーターベース'''
-    IMPORTANCE_CHOICES = (
-        (TaskImportance.High.name, TaskImportance.High.name),
-        (TaskImportance.Middle.name, TaskImportance.Middle.name),
-        (TaskImportance.Low.name, TaskImportance.Low.name),
-    )
     # タスク名。タスク作成時に設定。タスク管理者のみ変更可能
     name = models.CharField(max_length=64, unique=True)
     # タスクの短縮名。タスクマスターのみ変更可能
@@ -110,8 +106,8 @@ class Task(models.Model):
     # 締め切り。タスク作成時に設定。タスクマスターのみ変更可能
     deadline = models.DateTimeField()
     # 重要度
-    importance = models.CharField(
-        max_length=16, choices=IMPORTANCE_CHOICES, default=TaskImportance.Middle.name)
+    importance = models.CharField(max_length=16, choices=get_choices_from_enum(
+        TaskImportance), default=TaskImportance.Middle.name)
     # タスクの管理者。タスク管理者のみ変更可能
     managers = models.ManyToManyField(User, related_name="managing_tasks")
     # タスクの参加者。タスク管理者のみ変更可能
@@ -122,10 +118,21 @@ class Task(models.Model):
     # Asanaタスク。タスク管理者のみ変更可能
     asana_task = models.OneToOneField(
         AsanaTask, on_delete=models.SET_NULL, null=True)
-    # # 参加可能者
-    # joinable_members = models.ManyToManyField(
-    #     User, related_name="joinable_tasks")
-    # # 欠席者
-    # absent_members = models.ManyToManyField(User, related_name="absent_tasks")
-    # # タスクリマインダー
-    # tommorow_reminder =
+    # 参加可能者
+    joinable_members = models.ManyToManyField(
+        User, related_name="joinable_tasks")
+    # 欠席者
+    absent_members = models.ManyToManyField(User, related_name="absent_tasks")
+
+
+class TaskJoinCheckJob(models.Model):
+    '''タスクの参加チェックジョブデータベース'''
+    # 対象のグループ
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, related_name="task_checks")
+    # 対象のタスク
+    task = models.OneToOneField(Task, on_delete=models.CASCADE)
+    # グループ内でのタスクチェック番号
+    check_number = models.PositiveIntegerField()
+    # チェックの期限
+    deadline = models.DateTimeField()
