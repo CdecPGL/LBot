@@ -142,7 +142,9 @@ def get_ordered_valid_command_group_list(command_source: CommandSource):
     # 定義かデータベースで有効指定されているなら有効とする
     print("{}, {}".format(valid_message_command_groups,
                           valid_message_command_group_list))
-    return [command_group for order, (is_valid, command_group) in sorted(__command_group_list.items(), key=lambda order_group: order_group[0]) if is_valid or command_group.name in valid_message_command_group_list]
+    test = [command_group for order, (is_valid, command_group) in sorted(__command_group_list.items(), key=lambda order_group: order_group[0]) if is_valid or command_group.name in valid_message_command_group_list]
+    print(test)
+    return test
 
 
 @SystemMessageCommand.add_command("使い方", UserAuthority.Watcher)
