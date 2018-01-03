@@ -197,6 +197,30 @@ def register_command_groups():
             command_group_class.validate_in_initialize, command_group_class())
 
 
+def enable_messege_command_group(group_name: str)->bool:
+    '''メッセージコマンドグループを有効化する'''
+    if group_name in __command_group_order_map:
+        is_valid, command_func = __command_group_list[__command_group_order_map[group_name]]
+        __command_group_list[__command_group_order_map[group_name]] = (
+            True, command_func)
+        return True
+    else:
+        sys.stderr.write("存在しないコマンドグループ「{}」が指定されました。\n".format(group_name))
+        return False
+
+
+def disable_messege_command_group(group_name: str)->bool:
+    '''メッセージコマンドグループを無効化する'''
+    if group_name in __command_group_order_map:
+        is_valid, command_func = __command_group_list[__command_group_order_map[group_name]]
+        __command_group_list[__command_group_order_map[group_name]] = (
+            False, command_func)
+        return True
+    else:
+        sys.stderr.write("存在しないコマンドグループ「{}」が指定されました。\n".format(group_name))
+        return False
+
+
 def execute_message_command(command_name: str, command_source: CommandSource,  command_param_list: [str]):
     '''コマンドを実行する。戻り値は返信メッセージ。'''
     # コマンドグループを優先度準に並び替える

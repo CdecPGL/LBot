@@ -56,11 +56,11 @@ class Command(BaseCommand):
             # 明日が期限のタスクを通知
             group_task_map = {}
             for task in Task.objects.filter(deadline__range=get_tommorow_range()):
-                for group in task.groups.all():
-                    if group.line_group.group_id in group_task_map:
-                        group_task_map[group.line_group.group_id].append(task)
-                    else:
-                        group_task_map[group.line_group.group_id] = [task]
+                group = task.group
+                if group.line_group.group_id in group_task_map:
+                    group_task_map[group.line_group.group_id].append(task)
+                else:
+                    group_task_map[group.line_group.group_id] = [task]
 
             for line_group_id, task_list in group_task_map.items():
                 mess = "こんばんは。明日が期限のタスクは以下のとおりだよ。"
@@ -77,11 +77,11 @@ class Command(BaseCommand):
             # 明日が期限の重要タスクを通知
             group_task_map = {}
             for task in Task.objects.filter(deadline__range=get_tommorow_range(), importance=TaskImportance.High.name):
-                for group in task.groups.all():
-                    if group.line_group.group_id in group_task_map:
-                        group_task_map[group.line_group.group_id].append(task)
-                    else:
-                        group_task_map[group.line_group.group_id] = [task]
+                group = task.group
+                if group.line_group.group_id in group_task_map:
+                    group_task_map[group.line_group.group_id].append(task)
+                else:
+                    group_task_map[group.line_group.group_id] = [task]
 
             for line_group_id, task_list in group_task_map.items():
                 # 確認タスクを追加
