@@ -190,7 +190,9 @@ def register_command_groups():
 def enable_messege_command_group(group_name: str)->bool:
     '''メッセージコマンドグループを有効化する'''
     if group_name in __command_group_order_map:
-        __command_group_list[__command_group_order_map[group_name]][0] = True
+        is_valid, command_func = __command_group_list[__command_group_order_map[group_name]]
+        __command_group_list[__command_group_order_map[group_name]] = (
+            True, command_func)
         return True
     else:
         sys.stderr.write("存在しないコマンドグループ「{}」が指定されました。\n".format(group_name))
@@ -200,7 +202,9 @@ def enable_messege_command_group(group_name: str)->bool:
 def disable_messege_command_group(group_name: str)->bool:
     '''メッセージコマンドグループを無効化する'''
     if group_name in __command_group_order_map:
-        __command_group_list[__command_group_order_map[group_name]][0] = False
+        is_valid, command_func = __command_group_list[__command_group_order_map[group_name]]
+        __command_group_list[__command_group_order_map[group_name]] = (
+            False, command_func)
         return True
     else:
         sys.stderr.write("存在しないコマンドグループ「{}」が指定されました。\n".format(group_name))
