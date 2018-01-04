@@ -65,6 +65,7 @@ class Command(BaseCommand):
     @staticmethod
     def handle_tommorow_tasks_remind():
         '''明日が期限のタスクを通知'''
+        print("明日のタスク通知を実行({})".format(datetime.datetime.now(TIMEZONE_DEFAULT)))
         group_task_map = {}
         for task in Task.objects.filter(deadline__range=get_tommorow_range()):
             group = task.group
@@ -88,6 +89,8 @@ class Command(BaseCommand):
     @staticmethod
     def handle_tommorow_important_tasks_check():
         '''明日が期限の重要タスクを通知(グループのみ)'''
+        print("明日の重要タスク参加確認を実行({})".format(
+            datetime.datetime.now(TIMEZONE_DEFAULT)))
         # 明日が期限の重要タスクを取得しグループごとにまとめる
         group_task_map = {}
         for task in Task.objects.filter(deadline__range=get_tommorow_range(), importance=TaskImportance.High.name, group__isnull=False):
@@ -167,4 +170,5 @@ class Command(BaseCommand):
     @staticmethod
     def handle_soon_tasks_remind_and_check():
         '''もうすぐのタスクのリマインドとチェック'''
-        pass
+        print("もうしぐのタスク確認を実行({})".format(
+            datetime.datetime.now(TIMEZONE_DEFAULT)))

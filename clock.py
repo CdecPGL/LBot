@@ -37,5 +37,5 @@ if __name__ == "__main__":
     sc.add_job(tommorow_important_tasks_check_job, "cron", hour=tommorow_important_check_datetime.hour,
                minute=tommorow_important_check_datetime.minute)
     # タスクの事前確認(10分おきに確認)
-    sc.add_job(important_tasks_pre_check_job, "interval", minute=10)
+    sc.add_job(important_tasks_pre_check_job, "interval", minute=1)
     sc.start()
