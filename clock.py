@@ -24,6 +24,7 @@ def tommorow_important_tasks_check_job():
 @sc.scheduled_job("interval", minutes=1)
 def important_tasks_pre_check_job():
     '''タスクの事前確認とリマインドを行うジョブ'''
+    print("tsetsetsetsetset")
     call_command("check_tasks", TaskCheckType.TasksPreRemindAndCheck)
 
 
