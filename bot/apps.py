@@ -41,4 +41,3 @@ class BotConfig(AppConfig):
         scheduler.add_job(important_tasks_pre_check_job, "interval", minutes=1)
 
         #scheduler.start()
-        return True
