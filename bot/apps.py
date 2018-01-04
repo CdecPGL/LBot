@@ -2,29 +2,25 @@ from datetime import datetime, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
-from django.core.management import call_command
 
-from bot.management.commands.check_tasks import TaskCheckType
-from bot.utilities import TIMEZONE_DEFAULT
+from .task_check import TaskChecker, TaskCheckType
+from .utilities import TIMEZONE_DEFAULT
 
-
-def test_job():
-    print("testsetsetsets")
 
 def tommorow_tasks_remind_job():
     '''明日のタスクのリマインドを行うジョブ'''
-    call_command("check_tasks", TaskCheckType.TommorowTasksRemind)
+    TaskChecker.execute(TaskCheckType.TommorowTasksRemind)
 
 
 def tommorow_important_tasks_check_job():
     '''明日の重要タスクの確認を行うジョブ'''
-    call_command("check_tasks", TaskCheckType.TommorowImportantTasksCheck)
+    TaskChecker.execute(TaskCheckType.TommorowImportantTasksCheck)
 
 
 def important_tasks_pre_check_job():
     '''タスクの事前確認とリマインドを行うジョブ'''
-    print("tsetsetsetsetset")
-    call_command("check_tasks", TaskCheckType.TasksPreRemindAndCheck)
+    TaskChecker.execute(TaskCheckType.TasksPreRemindAndCheck)
+
 
 class BotConfig(AppConfig):
     name = 'bot'
