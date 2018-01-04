@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-import django
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
 
@@ -11,6 +10,7 @@ class BotConfig(AppConfig):
     def ready(self):
         '''アプリ起動時の処理'''
         print("初期化。")
+        # modelsのインポートはdjangoの初期化前に行えないので個々で行う
         from .task_check import TaskChecker, TaskCheckType
         from .utilities import TIMEZONE_DEFAULT
 
@@ -18,17 +18,13 @@ class BotConfig(AppConfig):
             '''明日のタスクのリマインドを行うジョブ'''
             TaskChecker.execute(TaskCheckType.TommorowTasksRemind)
 
-
         def tommorow_important_tasks_check_job():
             '''明日の重要タスクの確認を行うジョブ'''
             TaskChecker.execute(TaskCheckType.TommorowImportantTasksCheck)
 
-
         def important_tasks_pre_check_job():
             '''タスクの事前確認とリマインドを行うジョブ'''
-            pass
-            #django.setup()
-            #TaskChecker.execute(TaskCheckType.SoonTasksRemindAndCheck)
+            TaskChecker.execute(TaskCheckType.SoonTasksRemindAndCheck)
 
         scheduler = BackgroundScheduler()
         # # 明日のタスク確認(毎日23:00に確認)
