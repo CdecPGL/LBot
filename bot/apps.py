@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
+from django.core.management import call_command
 
 
 class BotConfig(AppConfig):
@@ -24,7 +25,8 @@ class BotConfig(AppConfig):
 
         def important_tasks_pre_check_job():
             '''タスクの事前確認とリマインドを行うジョブ'''
-            TaskChecker.execute(TaskCheckType.SoonTasksRemindAndCheck)
+            #TaskChecker.execute(TaskCheckType.SoonTasksRemindAndCheck)
+            call_command("check_tasks",TaskCheckType.SoonTasksRemindAndCheck)
 
         scheduler = BackgroundScheduler()
         # # 明日のタスク確認(毎日23:00に確認)
