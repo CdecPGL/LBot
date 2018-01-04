@@ -31,7 +31,7 @@ def check_task_watch_authority(user: User, task: Task):
         return True
     else:
         is_participant = task.participants.filter(id=user.id).exists()
-        is_related_member = task.group.filter(members__id=user.id).exists()
+        is_related_member = task.group.members.filter(id=user.id).exists()
         return is_participant or is_related_member
 
 
