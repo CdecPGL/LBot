@@ -226,22 +226,32 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
             reply += "■期限\n{}\n".format(
                 util.convert_datetime_in_default_timezone_to_string(task.deadline))
             reply += "■重要度\n{}\n".format(TaskImportance[task.importance].value)
+            # メンバー
+            if task.participants.exists():
+                participants_str = ",".join(
+                    [participant.name for participant in task.participants.all()])
+            else:
+                participants_str = "なし"
+            reply += "■グループ\n{}\n".format(
+                task.group.name if task.group else "なし")
+            reply += "■メンバー\n{}\n".format(participants_str)
+            # 参加可能者
+            if task.joinable_members.exists():
+                joinables_str = ",".join(
+                    [member.name for member in task.joinable_members.all()])
+                reply += "■参加可能者\n{}\n".format(joinables_str)
+            # 欠席者
+            if task.absent_members.exists():
+                absents_str = ",".join(
+                    [member.name for member in task.absent_members.all()])
+                reply += "■欠席者\n{}\n".format(absents_str)
             # 管理者
             if task.managers.exists():
                 managers_str = ",".join(
                     [manager.name for manager in task.managers.all()])
             else:
                 managers_str = "なし"
-            reply += "■管理者\n{}\n".format(managers_str)
-            # 参加者
-            if task.participants.exists():
-                participants_str = ",".join(
-                    [participant.name for participant in task.participants.all()])
-            else:
-                participants_str = "なし"
-            reply += "■参加者\n{}\n".format(participants_str)
-            reply += "■関連グループ\n{}".format(
-                task.group.name if task.group else "なし")
+            reply += "■管理者\n{}".format(managers_str)
             return reply, []
         else:
             return None, ["タスクの閲覧権限がありません。タスクの閲覧はMasterユーザー、タスクの参加者、タスクの関連グループのメンバーのみ可能でーす。"]
