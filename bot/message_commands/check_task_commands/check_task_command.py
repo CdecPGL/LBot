@@ -95,29 +95,31 @@ def set_participate_state(command_source: CommandSource, target_check_number_or_
     # 全員の確認が取れていたら確認を終了
     if task.participants.count() == target_check_task.checked_users.count():
         target_check_task.delete()
+        reply = "「{}」に{}するんだね。了解！\n".format(
+            task.name, "参加" if is_participate else "欠席")
+        reply += "\nタスク「{}」の参加確認が完了しました。\n".format(task.name)
+        # 参加可能者
+        if task.joinable_members.exists():
+            joinable_str = "、".join(
+                [joinable.name for joinable in task.joinable_members.all()])
+        else:
+            joinable_str = "なし"
+        reply += "<参加可能者>\n{}\n".format(joinable_str)
+        # 欠席者
+        if task.absent_members.exists():
+            absent_str = "、".join(
+                [absent.name for absent in task.absent_members.all()])
+        else:
+            absent_str = "なし"
+        reply += "<欠席者>\n{}".format(absent_str)
+
         # 最後の確認タスクだったら、タスクの確認を終了する
         if len(checking_task_list) == 1:
             command_source.group_data.valid_message_command_groups = remove_from_comma_separeted_string(
                 command_source.group_data.valid_message_command_groups, "タスク参加確認")
             command_source.group_data.save()
-            reply = "「{}」に{}するんだね。了解！\n".format(
-                task.name, "参加" if is_participate else "欠席")
-            reply += "\nタスク「{}」の参加確認が完了しました。\n".format(task.name)
-            # 参加可能者
-            if task.joinable_members.exists():
-                joinable_str = "、".join(
-                    [joinable.name for joinable in task.joinable_members.all()])
-            else:
-                joinable_str = "なし"
-            reply += "<参加可能者>\n{}\n".format(joinable_str)
-            # 欠席者
-            if task.absent_members.exists():
-                absent_str = "、".join(
-                    [absent.name for absent in task.absent_members.all()])
-            else:
-                absent_str = "なし"
-            reply += "<欠席者>\n{}".format(absent_str)
-            return reply, []
+
+        return reply, []
     else:
         target_check_task.save()
         return "「{}」に{}するんだね。了解！".format(task.name, "参加" if is_participate else "欠席"), []
