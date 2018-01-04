@@ -20,8 +20,8 @@ def tommorow_important_tasks_check_job():
 
 def important_tasks_pre_check_job():
     '''タスクの事前確認とリマインドを行うジョブ'''
-    django.setup()
-    TaskChecker.execute(TaskCheckType.SoonTasksRemindAndCheck)
+    #django.setup()
+    #TaskChecker.execute(TaskCheckType.SoonTasksRemindAndCheck)
 
 
 class BotConfig(AppConfig):
