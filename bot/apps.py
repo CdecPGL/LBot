@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+import django
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
 
@@ -19,6 +20,7 @@ def tommorow_important_tasks_check_job():
 
 def important_tasks_pre_check_job():
     '''タスクの事前確認とリマインドを行うジョブ'''
+    django.setup()
     TaskChecker.execute(TaskCheckType.SoonTasksRemindAndCheck)
 
 
