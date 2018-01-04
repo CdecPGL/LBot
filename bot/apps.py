@@ -19,7 +19,7 @@ def tommorow_important_tasks_check_job():
 
 def important_tasks_pre_check_job():
     '''タスクの事前確認とリマインドを行うジョブ'''
-    TaskChecker.execute(TaskCheckType.TasksPreRemindAndCheck)
+    TaskChecker.execute(TaskCheckType.SoonTasksRemindAndCheck)
 
 
 class BotConfig(AppConfig):
@@ -42,4 +42,4 @@ class BotConfig(AppConfig):
         # タスクの事前確認(10分おきに確認)
         scheduler.add_job(important_tasks_pre_check_job, "interval", minutes=1)
 
-        scheduler.start()
+        #scheduler.start()
