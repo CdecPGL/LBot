@@ -1,1 +1,1 @@
-web: gunicorn luftelli_bot.wsgi --log-file -
+web: gunicorn luftelli_bot.wsgi bot:app --log-file -
