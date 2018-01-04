@@ -4,8 +4,8 @@ import django
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
 
-from .task_check import TaskChecker, TaskCheckType
 from .utilities import TIMEZONE_DEFAULT
+from .task_check import TaskCheckType
 
 
 def tommorow_tasks_remind_job():
@@ -20,6 +20,7 @@ def tommorow_important_tasks_check_job():
 
 def important_tasks_pre_check_job():
     '''タスクの事前確認とリマインドを行うジョブ'''
+    pass
     #django.setup()
     #TaskChecker.execute(TaskCheckType.SoonTasksRemindAndCheck)
 
@@ -30,6 +31,7 @@ class BotConfig(AppConfig):
     def ready(self):
         '''アプリ起動時の処理'''
         print("初期化。")
+        from .task_check import TaskChecker, TaskCheckType
         scheduler = BackgroundScheduler()
         # # 明日のタスク確認(毎日23:00に確認)
         # tommorow_remind_datetime = datetime(
