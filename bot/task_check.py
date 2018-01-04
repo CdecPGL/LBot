@@ -10,6 +10,7 @@ from . import line
 from .message_commands import add_message_command_group
 from .models import Task, TaskImportance, TaskJoinCheckJob
 from .utilities import TIMEZONE_DEFAULT
+from django.apps import apps
 
 
 def convert_deadline_to_string(deadline):
@@ -54,8 +55,9 @@ class TaskChecker(object):
 
     @staticmethod
     def execute(task_check_type):
-        '''確認を実行'''
-        TaskChecker().__execute(task_check_type)
+        '''可能なら確認を実行'''
+        if apps.ready:
+            TaskChecker().__execute(task_check_type)
 
     @staticmethod
     def __execute_tommorow_tasks_remind():
