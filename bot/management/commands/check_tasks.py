@@ -7,8 +7,9 @@ from django.core.management.base import BaseCommand
 from linebot.models import TextSendMessage
 
 from bot import line
+from bot.message_commands import add_message_command_group
 from bot.models import Task, TaskImportance, TaskJoinCheckJob
-from bot.utilities import TIMEZONE_DEFAULT, add_to_comma_separeted_string
+from bot.utilities import TIMEZONE_DEFAULT
 
 
 def convert_deadline_to_string(deadline):
@@ -141,9 +142,7 @@ class Command(BaseCommand):
                         line_group_id, TextSendMessage(text=mess))
 
                 # タスク参加確認を開始
-                group.valid_message_command_groups = add_to_comma_separeted_string(
-                    group.valid_message_command_groups, "タスク参加確認")
-                group.save()
+                add_message_command_group(group, "タスク参加確認")
         elif task_check_type == TaskCheckType.TasksPreRemindAndCheck:
             pass
         else:

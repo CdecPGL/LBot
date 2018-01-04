@@ -4,9 +4,9 @@ import sys
 
 from bot.authorities import UserAuthority
 from bot.models import TaskJoinCheckJob, User
-from bot.utilities import remove_from_comma_separeted_string
 
-from ..message_command import CommandSource, MessageCommandGroupBase
+from ..message_command import (CommandSource, MessageCommandGroupBase,
+                               remove_message_command_group)
 
 
 class CheckTaskMessageCommandGroup(MessageCommandGroupBase):
@@ -23,16 +23,12 @@ def set_participate_state(command_source: CommandSource, target_check_number_or_
     '''タスクへの参加不参加を設定する'''
     # コマンドが実行できるかどうか確認
     if not command_source.group_data:
-        command_source.group_data.valid_message_command_groups = remove_from_comma_separeted_string(
-            command_source.group_data.valid_message_command_groups, "タスク参加確認")
-        command_source.group_data.save()
+        remove_message_command_group(command_source.group_data, "タスク参加確認")
         return None, ["グループ外での実行には対応していません。"]
     checking_tasks = TaskJoinCheckJob.objects.filter(
         group=command_source.group_data)
     if not checking_tasks:
-        command_source.user_data.valid_message_command_groups = remove_from_comma_separeted_string(
-            command_source.user_data.valid_message_command_groups, "タスク参加確認")
-        command_source.user_data.save()
+        remove_message_command_group(command_source.group_data, "タスク参加確認")
         return "このグループで現在確認中のタスクはありません。", []
 
     # 対象のタスク確認を取得
@@ -115,9 +111,7 @@ def set_participate_state(command_source: CommandSource, target_check_number_or_
 
         # 最後の確認タスクだったら、タスクの確認を終了する
         if len(checking_task_list) == 1:
-            command_source.group_data.valid_message_command_groups = remove_from_comma_separeted_string(
-                command_source.group_data.valid_message_command_groups, "タスク参加確認")
-            command_source.group_data.save()
+            remove_message_command_group(command_source.group_data, "タスク参加確認")
 
         return reply, []
     else:

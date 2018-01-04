@@ -8,7 +8,9 @@ import unicodedata
 from bot.authorities import UserAuthority
 from bot.models import Group, User
 from bot.reply_generators import generate_random_reply
-from bot.utilities import split_command_paramater_strig
+from bot.utilities import (add_to_comma_separeted_string,
+                           remove_from_comma_separeted_string,
+                           split_command_paramater_strig)
 
 
 class CommandSource(object):
@@ -184,6 +186,26 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
         reply += 'また、「使い方」コマンドにコマンド名を指定することでそのコマンドの詳細説明を表示します。\n'
         reply += generate_command_list_string()
         return reply, []
+
+
+def add_message_command_group(target, group_name, auto_save=True):
+    '''ユーザーかグループにメッセージコマンドグループを追加する'''
+    if not isinstance(target, Group, User):
+        return TypeError("GroupかUserのみ対応しています。")
+    target.valid_message_command_groups = add_to_comma_separeted_string(
+        target.valid_message_command_groups, group_name)
+    if auto_save:
+        target.save()
+
+
+def remove_message_command_group(target, group_name, auto_save=True):
+    '''ユーザーかグループからメッセージコマンドグループを削除する'''
+    if not isinstance(target, Group, User):
+        return TypeError("GroupかUserのみ対応しています。")
+    target.valid_message_command_groups = remove_from_comma_separeted_string(
+        target.valid_message_command_groups, group_name)
+    if auto_save:
+        target.save()
 
 
 def register_command_groups():
