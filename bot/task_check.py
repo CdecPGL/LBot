@@ -50,6 +50,7 @@ class TaskCheckType(Enum):
 
 class TaskChecker(object):
     '''タスクの確認クラス'''
+    __lock = Lock()
 
     def __init__(self):
         self.__handler_map = {
@@ -66,7 +67,9 @@ class TaskChecker(object):
     @staticmethod
     def execute(task_check_type, force=False):
         '''確認を実行'''
-        TaskChecker().__execute(task_check_type, force)
+        # Djangoの複数プロセスから同時に呼ばれた場合に同じ処理が複数回行われることを防ぐため、スレッドロックを行う
+        with TaskChecker.__lock:
+            TaskChecker().__execute(task_check_type, force)
 
     @classmethod
     def __execute_all(cls, force):
