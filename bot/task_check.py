@@ -3,6 +3,7 @@
 import datetime
 import sys
 from enum import Enum
+from threading import Thread, Lock
 
 from linebot.models import TextSendMessage
 
@@ -10,6 +11,13 @@ from . import line
 from .message_commands import add_message_command_group
 from .models import Task, TaskImportance, TaskJoinCheckJob
 from .utilities import TIMEZONE_DEFAULT
+
+# 明日のタスクリマインダーの時刻
+TOMORROW_REMIND_TIME = (23, 0)
+# 明日のタスク確認の時刻
+TOMORROW_CHECK_TIME = (12, 0)
+# もうすぐのタスクリマインダーと確認をどれくらい前に行うか
+SOON_REMIND_AND_CHECK_BEFORE = (1, 0)
 
 
 def convert_deadline_to_string(deadline):
@@ -30,6 +38,8 @@ def get_tommorow_range():
 
 class TaskCheckType(Enum):
     '''タスクチェックのタイプ'''
+    # 全リマインド及び確認
+    All = "All"
     # 明日のタスクのリマインド
     TommorowTasksRemind = "TommorowTasksRemind"
     # 明日の重要タスクの確認
@@ -43,22 +53,30 @@ class TaskChecker(object):
 
     def __init__(self):
         self.__handler_map = {
+            TaskCheckType.All: TaskChecker.__execute_all,
             TaskCheckType.TommorowTasksRemind: TaskChecker.__execute_tommorow_tasks_remind,
             TaskCheckType.TommorowImportantTasksCheck: TaskChecker.__execute_tommorow_important_tasks_check,
             TaskCheckType.SoonTasksRemindAndCheck: TaskChecker.__execute_soon_tasks_remind_and_check,
         }
 
-    def __execute(self, task_check_type):
+    def __execute(self, task_check_type, force):
         '''確認を実行'''
-        self.__handler_map[task_check_type]()
+        self.__handler_map[task_check_type](force)
 
     @staticmethod
-    def execute(task_check_type):
+    def execute(task_check_type, force=False):
         '''確認を実行'''
-        TaskChecker().__execute(task_check_type)
+        TaskChecker().__execute(task_check_type, force)
+
+    @classmethod
+    def __execute_all(cls, force):
+        '''全てのタスクを行う'''
+        cls.__execute_tommorow_tasks_remind(force)
+        cls.__execute_tommorow_important_tasks_check(force)
+        cls.__execute_soon_tasks_remind_and_check(force)
 
     @staticmethod
-    def __execute_tommorow_tasks_remind():
+    def __execute_tommorow_tasks_remind(force):
         '''明日が期限のタスクを通知'''
         print("明日のタスク通知を実行({})".format(datetime.datetime.now(TIMEZONE_DEFAULT)))
         group_task_map = {}
@@ -82,7 +100,7 @@ class TaskChecker(object):
                 line_group_id, TextSendMessage(text=mess))
 
     @staticmethod
-    def __execute_tommorow_important_tasks_check():
+    def __execute_tommorow_important_tasks_check(force):
         '''明日が期限の重要タスクを通知(グループのみ)'''
         print("明日の重要タスク参加確認を実行({})".format(
             datetime.datetime.now(TIMEZONE_DEFAULT)))
@@ -163,7 +181,7 @@ class TaskChecker(object):
             add_message_command_group(group, "タスク参加確認")
 
     @staticmethod
-    def __execute_soon_tasks_remind_and_check():
+    def __execute_soon_tasks_remind_and_check(force):
         '''もうすぐのタスクのリマインドとチェック'''
-        print("もうしぐのタスク確認を実行({})".format(
+        print("もうすぐのタスク確認を実行({})".format(
             datetime.datetime.now(TIMEZONE_DEFAULT)))

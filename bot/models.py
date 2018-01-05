@@ -14,18 +14,6 @@ class TaskImportance(Enum):
     Low = "低"
 
 
-# class ReminderStatus(Enum):
-#     '''リマインダー状況'''
-#     # 何もしてない
-#     NotYet = 0
-#     # リマインドはした
-#     Reminded = 1
-#     # メンバーに確認中
-#     Checking = 2
-#     # メンバーへの確認完了
-#     Checked = 3
-
-
 def get_choices_from_enum(source_enum):
     '''列挙体から選択肢を取得'''
     return [(item.name, item.name) for item in source_enum]
@@ -127,6 +115,10 @@ class Task(models.Model):
         User, related_name="joinable_tasks")
     # 欠席者
     absent_members = models.ManyToManyField(User, related_name="absent_tasks")
+    # 明日のタスク確認が終わったかどうか(リマインド含む)
+    is_tomorrow_check_finished = models.BooleanField(default=False)
+    # もうすぐのタスク確認が終わったかどうか(リマインド含む)
+    is_soon_check_finished = models.BooleanField(default=False)
 
 
 class TaskJoinCheckJob(models.Model):

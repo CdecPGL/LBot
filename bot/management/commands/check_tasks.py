@@ -15,7 +15,10 @@ class Command(BaseCommand):
         argparseモジュールが渡される。'''
         parser.add_argument('task_check_type',
                             type=TaskCheckType, choices=list(TaskCheckType))
+        parser.add_argument('-f', dest="force",
+                            action="store_true", default=False)
 
     def handle(self, *args, **options):
         task_check_type = options["task_check_type"]
-        TaskChecker.execute(task_check_type)
+        force = options["force"] if "force" in options else False
+        TaskChecker.execute(task_check_type, force)
