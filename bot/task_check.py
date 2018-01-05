@@ -86,45 +86,15 @@ class TaskChecker(object):
         # リマインド時間前なら何もしない
         if not force and remind_time < datetime.datetime.now(TIMEZONE_DEFAULT).time():
             return
-
-        group_task_map = {}
         # 明日が期限でリマインドが終わってないタスクを探す
-        is_already_reminded = Task.objects.filter(
-            deadline__range=get_tommorow_range(), is_tomorrow_remind_finished=True).exists()
         target_task_set = Task.objects.filter(
             deadline__range=get_tommorow_range(), is_tomorrow_remind_finished=False)
-        for task in target_task_set:
-            group = task.group
-            if group.line_group.group_id in group_task_map:
-                group_task_map[group.line_group.group_id].append(task)
-            else:
-                group_task_map[group.line_group.group_id] = [task]
-
-        for line_group_id, task_list in group_task_map.items():
-            mess = "こんばんは。明日が期限のタスクは以下のとおりだよ。"
-            line.api.push_message(
-                line_group_id, TextSendMessage(text=mess))
-
-            mess = ""
-            for task in task_list:
-                mess += "■{}(期限: {})\n".format(task.name,
-                                               convert_deadline_to_string(task.deadline))
-                mess += "メンバー：{}\n".format(
-                    "、".join([member.name for member in task.participants.all()]))
-            line.api.push_message(
-                line_group_id, TextSendMessage(text=mess))
-
-            mess = "おやすみなさい:D"
-            line.api.push_message(
-                line_group_id, TextSendMessage(text=mess))
-
-            # タスクをリマインド済みにする
-            for task in task_list:
-                task.is_tomorrow_remind_finished = True
-                task.save()
-
+        # タスクのリマインドを実行
+        TaskChecker.__remind_tasks(
+            target_task_set, "こんばんは。明日が期限のタスクは以下のとおりだよ。", "おやすみなさい:D")
+        # リマインドしたタスクがあったらログに残す
         if target_task_set.exists():
-            print("明日のタスク{}件のりマインドを実行。({})".format(
+            print("明日のタスク{}件のリマインドを実行。({})".format(
                 target_task_set.count(), datetime.datetime.now(TIMEZONE_DEFAULT)))
 
     @staticmethod
@@ -135,11 +105,62 @@ class TaskChecker(object):
         # 確認時間前なら何もしない
         if not force and check_time < datetime.datetime.now(TIMEZONE_DEFAULT).time():
             return
-
-        # 明日が期限の確認していない重要タスクを取得しグループごとにまとめる
-        group_task_map = {}
+        # 明日が期限の確認していない重要タスクを取得する
         taret_task_set = Task.objects.filter(deadline__range=get_tommorow_range(
         ), importance=TaskImportance.High.name, group__isnull=False, is_tomorrow_remind_finished=False)
+        # タスクの参加確認を実行
+        TaskChecker.__check_tasks(
+            taret_task_set, "こんにちは。\n重要なタスク「{}」が明日の{}からあるよ。", "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。")
+        # 確認したタスクがあったらログに残す
+        if taret_task_set.exists():
+            print("明日の重要タスク{}件の参加確認を実行({})。".format(
+                taret_task_set.count(), datetime.datetime.now(TIMEZONE_DEFAULT)))
+
+    @staticmethod
+    def __execute_soon_tasks_remind_and_check(force):
+        '''もうすぐのタスクのリマインドとチェック(グループのみ)'''
+        print("もうすぐのタスク確認を実行({})".format(
+            datetime.datetime.now(TIMEZONE_DEFAULT)))
+
+    @staticmethod
+    def __remind_tasks(target_task_set, start_messege, end_message):
+        '''タスクのリマインドを行う'''
+        # 対象タスクをグループごとにまとめる
+        group_task_map = {}
+        for task in target_task_set:
+            group = task.group
+            if group.line_group.group_id in group_task_map:
+                group_task_map[group.line_group.group_id].append(task)
+            else:
+                group_task_map[group.line_group.group_id] = [task]
+
+        for line_group_id, task_list in group_task_map.items():
+            # 開始メッセージを送信
+            line.api.push_message(
+                line_group_id, TextSendMessage(text=start_messege))
+            # タスク確認を送信
+            mess = ""
+            for task in task_list:
+                mess += "■{}(期限: {})\n".format(task.name,
+                                               convert_deadline_to_string(task.deadline))
+                mess += "メンバー：{}\n".format(
+                    "、".join([member.name for member in task.participants.all()]))
+            line.api.push_message(
+                line_group_id, TextSendMessage(text=mess))
+            # 終了メッセージを送信
+            line.api.push_message(
+                line_group_id, TextSendMessage(text=end_message))
+
+            # タスクをリマインド済みにする
+            for task in task_list:
+                task.is_tomorrow_remind_finished = True
+                task.save()
+
+    @staticmethod
+    def __check_tasks(taret_task_set, start_messege_single, start_messege_alone_multi):
+        '''タスクの参加確認を行う'''
+        # 対象タスクをグループごとにまとめる
+        group_task_map = {}
         for task in taret_task_set:
             group = task.group
             if group.line_group.group_id in group_task_map:
@@ -218,13 +239,3 @@ class TaskChecker(object):
 
             # タスク参加確認を開始
             add_message_command_group(group, "タスク参加確認")
-
-        if taret_task_set.exists():
-            print("明日の重要タスク{}件の参加確認を実行({})。".format(
-                taret_task_set.count(), datetime.datetime.now(TIMEZONE_DEFAULT)))
-
-    @staticmethod
-    def __execute_soon_tasks_remind_and_check(force):
-        '''もうすぐのタスクのリマインドとチェック(グループのみ)'''
-        print("もうすぐのタスク確認を実行({})".format(
-            datetime.datetime.now(TIMEZONE_DEFAULT)))
