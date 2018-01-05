@@ -80,13 +80,13 @@ class TaskChecker(object):
 
     @staticmethod
     def __execute_tommorow_tasks_remind(force):
-        '''明日が期限の全てのタスクを通知'''
+        '''明日が期限の全てのタスクを通知(グループのみ)'''
         # リマインド時間前なら何もしない
         if not force and TOMORROW_REMIND_TIME < datetime.now(TIMEZONE_DEFAULT).timetz():
             return
         # 明日が期限でリマインドが終わってないタスクを探す
         target_task_set = Task.objects.filter(
-            deadline__range=get_tommorow_range(), is_tomorrow_remind_finished=False)
+            deadline__range=get_tommorow_range(), group__isnull=False, is_tomorrow_remind_finished=False)
         # タスクのリマインドを実行
         TaskChecker.__remind_tasks(
             target_task_set, "こんばんは。明日が期限のタスクは以下のとおりだよ。", "おやすみなさい:D")
@@ -117,12 +117,12 @@ class TaskChecker(object):
         '''もうすぐのタスクのリマインド(重要度中)とチェック(重要度高)(グループのみ)'''
         # 期限もうすぐの重要度中でリマインド終わってないタスクを取得する
         target_remind_task_set = Task.objects.filter(
-            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, importance=TaskImportance.Middle.name, is_soon_check_finished=False)
+            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, group__isnull=False, importance=TaskImportance.Middle.name, is_soon_check_finished=False)
         TaskChecker.__remind_tasks(
             target_remind_task_set, "やあ。期限が近づいてるタスクがあるよ。", "忘れないようにね:-)")
         # 期限もうすぐの重要度高でリマインド終わってないタスクを取得する
         target_check_task_set = Task.objects.filter(
-            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, importance=TaskImportance.High.name, is_soon_check_finished=False)
+            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, group__isnull=False, importance=TaskImportance.High.name, is_soon_check_finished=False)
         TaskChecker.__check_tasks(
             target_check_task_set, "おい。\n重要なタスク「{}」が{}からあるよ。", "はい。期限の近い重要なタスクがあるよ。")
         # リマインドや確認したものがあったらログに残す
