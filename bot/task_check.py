@@ -90,6 +90,10 @@ class TaskChecker(object):
         # タスクのリマインドを実行
         TaskChecker.__remind_tasks(
             target_task_set, "こんばんは。明日が期限のタスクは以下のとおりだよ。", "おやすみなさい:D")
+        # タスクをリマインド済みにする
+        for task in target_task_set.all():
+            task.is_tomorrow_remind_finished = True
+            task.save()
         # リマインドしたタスクがあったらログに残す
         if target_task_set.exists():
             print("明日のタスク{}件のリマインドを実行。({})".format(
@@ -102,15 +106,19 @@ class TaskChecker(object):
         if not force and TOMORROW_CHECK_TIME < datetime.now(TIMEZONE_DEFAULT).timetz():
             return
         # 明日が期限の確認していない重要タスクを取得する
-        taret_task_set = Task.objects.filter(deadline__range=get_tommorow_range(
+        target_task_set = Task.objects.filter(deadline__range=get_tommorow_range(
         ), importance=TaskImportance.High.name, group__isnull=False, is_tomorrow_check_finished=False)
         # タスクの参加確認を実行
         TaskChecker.__check_tasks(
-            taret_task_set, "こんにちは。\n重要なタスク「{}」が明日の{}からあるよ。", "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。")
+            target_task_set, "こんにちは。\n重要なタスク「{}」が明日の{}からあるよ。", "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。")
+        # タスクを確認済みにする
+        for task in target_task_set.all():
+            task.is_tomorrow_check_finished = True
+            task.save()
         # 確認したタスクがあったらログに残す
-        if taret_task_set.exists():
+        if target_task_set.exists():
             print("明日の重要タスク{}件の新たな参加確認を実行({})。".format(
-                taret_task_set.count(), datetime.now(TIMEZONE_DEFAULT)))
+                target_task_set.count(), datetime.now(TIMEZONE_DEFAULT)))
 
     @staticmethod
     def __execute_soon_tasks_remind_and_check(force):
@@ -125,8 +133,16 @@ class TaskChecker(object):
             deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, group__isnull=False, importance=TaskImportance.High.name, is_soon_check_finished=False)
         TaskChecker.__check_tasks(
             target_check_task_set, "おい。\n重要なタスク「{}」が{}からあるよ。", "はい。期限の近い重要なタスクがあるよ。")
+        # タスクをリマインド済みにする
+        for task in target_remind_task_set.all():
+            task.is_tomorrow_remind_finished = True
+            task.save()
+        # タスクを確認済みにする
+        for task in target_check_task_set.all():
+            task.is_tomorrow_check_finished = True
+            task.save()
         # リマインドや確認したものがあったらログに残す
-        if target_remind_task_set.exists() and target_check_task_set.exists():
+        if target_remind_task_set.exists() or target_check_task_set.exists():
             print("もうすぐのタスク{}件のリマインドと重要タスク{}件の確認を実行。({})".format(target_remind_task_set.count(), target_check_task_set.count(),
                                                                  datetime.now(TIMEZONE_DEFAULT)))
 
@@ -160,17 +176,12 @@ class TaskChecker(object):
             line.api.push_message(
                 line_group_id, TextSendMessage(text=end_message))
 
-            # タスクをリマインド済みにする
-            for task in task_list:
-                task.is_tomorrow_remind_finished = True
-                task.save()
-
     @staticmethod
-    def __check_tasks(taret_task_set, start_messege_single, start_messege_alone_multi):
+    def __check_tasks(target_task_set, start_messege_single, start_messege_alone_multi):
         '''タスクの参加確認を行う'''
         # 対象タスクをグループごとにまとめる
         group_task_map = {}
-        for task in taret_task_set:
+        for task in target_task_set:
             group = task.group
             if group.line_group.group_id in group_task_map:
                 group_task_map[group.line_group.group_id].append(task)
@@ -203,7 +214,7 @@ class TaskChecker(object):
             if len(ordered_task_check_job_list) == 1:
                 task_check_job = ordered_task_check_job_list[0]
                 task = task_check_job.task
-                mess = "こんにちは。\n重要なタスク「{}」が明日の{}からあるよ。".format(
+                mess = start_messege_single.format(
                     task.name, convert_deadline_to_string(task.deadline))
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
@@ -215,7 +226,7 @@ class TaskChecker(object):
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
             else:
-                mess = "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。"
+                mess = start_messege_alone_multi
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
                 # タスク一覧を作成
@@ -234,11 +245,6 @@ class TaskChecker(object):
                 mess = "例えば、1番のタスクに参加できて2番はできない場合は\n======\n#できる\n1\n======\n#できない\n2\n======\nのように答えてね。"
                 line.api.push_message(
                     line_group_id, TextSendMessage(text=mess))
-
-            # タスクを確認済みにする
-            for task in task_list:
-                task.is_tomorrow_check_finished = True
-                task.save()
 
             # タスク参加確認を開始
             add_message_command_group(group, "タスク参加確認")
