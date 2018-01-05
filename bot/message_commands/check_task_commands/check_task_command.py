@@ -2,9 +2,8 @@
 
 import sys
 
-from bot.authorities import UserAuthority
-from bot.models import TaskJoinCheckJob, User
-
+from ...authorities import UserAuthority
+from ...models import TaskJoinCheckJob, User
 from ..message_command import (CommandSource, MessageCommandGroupBase,
                                remove_message_command_group)
 

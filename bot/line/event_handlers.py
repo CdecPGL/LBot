@@ -1,13 +1,14 @@
+'''LINEイベントのハンドラ'''
+
 import sys
 
 import linebot
 
-import bot.message_commands as mess_cmd
-import bot.utilities as util
-from bot.exceptions import GroupNotFoundError, UserNotFoundError
-
 from . import line_utilities as line_util
+from . import utilities as util
 from . import line_settings
+from .. import message_commands as mess_cmd
+from ..exceptions import GroupNotFoundError, UserNotFoundError
 
 COMMAND_TRIGGER_LIST = ["#", "＃"]
 SENTENCE_MAX_LENGTH = 64

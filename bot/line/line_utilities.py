@@ -1,9 +1,8 @@
 '''LINE関連のUtility関数群'''
 
-from bot.authorities import UserAuthority
-from bot.exceptions import GroupNotFoundError, UserNotFoundError
-from bot.models import Group, LineGroup, LineUser, User
-
+from ..authorities import UserAuthority
+from ..exceptions import GroupNotFoundError, UserNotFoundError
+from ..models import Group, LineGroup, LineUser, User
 from .line_settings import api as line_api
 
 

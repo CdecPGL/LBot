@@ -1,8 +1,7 @@
 '''その他のメッセージコマンド'''
 
-from bot.authorities import UserAuthority
-from bot.utilities import TIMEZONE_DEFAULT
-
+from ...authorities import UserAuthority
+from ...utilities import TIMEZONE_DEFAULT
 from ..message_command import CommandSource
 from .standard_command import StandardMessageCommandGroup
 

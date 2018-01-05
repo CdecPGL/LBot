@@ -1,5 +1,3 @@
-from datetime import datetime, timezone
-
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
 
@@ -15,7 +13,6 @@ class BotConfig(AppConfig):
         super(BotConfig, self).ready()
         # modelsのインポートはdjangoの初期化前に行えないので個々で行う
         from .task_check import TaskChecker, TaskCheckType
-        from .utilities import TIMEZONE_DEFAULT
 
         def task_check_job():
             '''明日のタスクのリマインドや確認を行うジョブ'''

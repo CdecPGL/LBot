@@ -5,12 +5,12 @@ import inspect
 import sys
 import unicodedata
 
-from bot.authorities import UserAuthority
-from bot.models import Group, User
-from bot.reply_generators import generate_random_reply
-from bot.utilities import (add_to_comma_separeted_string,
-                           remove_from_comma_separeted_string,
-                           split_command_paramater_strig)
+from ..authorities import UserAuthority
+from ..models import Group, User
+from ..reply_generators import generate_random_reply
+from ..utilities import (add_to_comma_separeted_string,
+                         remove_from_comma_separeted_string,
+                         split_command_paramater_strig)
 
 
 class CommandSource(object):

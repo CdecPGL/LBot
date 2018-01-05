@@ -1,10 +1,9 @@
 '''ユーザー関連のメッセージコマンド'''
 
-import bot.database_utilities as db_util
-from bot.authorities import UserAuthority
-from bot.exceptions import UserNotFoundError
-from bot.models import User
-
+from ... import database_utilities as db_util
+from ...authorities import UserAuthority
+from ...exceptions import UserNotFoundError
+from ...models import User
 from ..message_command import CommandSource
 from .standard_command import StandardMessageCommandGroup
 

@@ -1,10 +1,9 @@
 '''グループ関連のメッセージコマンド'''
 
-import bot.database_utilities as db_util
-from bot.authorities import UserAuthority
-from bot.exceptions import GroupNotFoundError
-from bot.models import Group, User
-
+from ... import database_utilities as db_util
+from ...authorities import UserAuthority
+from ...exceptions import GroupNotFoundError
+from ...models import Group, User
 from ..message_command import CommandSource
 from .standard_command import StandardMessageCommandGroup
 

@@ -1,6 +1,5 @@
 '''タスクの確認に関するクラスなど'''
 
-import sys
 from datetime import date, datetime, time, timedelta
 from enum import Enum
 from threading import Lock
