@@ -117,12 +117,12 @@ class TaskChecker(object):
         '''もうすぐのタスクのリマインド(重要度中)とチェック(重要度高)(グループのみ)'''
         # 期限もうすぐの重要度中でリマインド終わってないタスクを取得する
         target_remind_task_set = Task.objects.filter(
-            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, importance_=TaskImportance.Middle.name, is_soon_check_finished=False)
+            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, importance=TaskImportance.Middle.name, is_soon_check_finished=False)
         TaskChecker.__remind_tasks(
             target_remind_task_set, "やあ。期限が近づいてるタスクがあるよ。", "忘れないようにね:-)")
         # 期限もうすぐの重要度高でリマインド終わってないタスクを取得する
         target_check_task_set = Task.objects.filter(
-            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, importance_=TaskImportance.High.name, is_soon_check_finished=False)
+            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, importance=TaskImportance.High.name, is_soon_check_finished=False)
         TaskChecker.__check_tasks(
             target_check_task_set, "おい。\n重要なタスク「{}」が{}からあるよ。", "はい。期限の近い重要なタスクがあるよ。")
         # リマインドや確認したものがあったらログに残す
