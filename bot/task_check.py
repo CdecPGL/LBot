@@ -145,6 +145,7 @@ class TaskChecker(object):
                                                convert_deadline_to_string(task.deadline))
                 mess += "メンバー：{}\n".format(
                     "、".join([member.name for member in task.participants.all()]))
+            mess = mess.rstrip("\n")
             line.api.push_message(
                 line_group_id, TextSendMessage(text=mess))
             # 終了メッセージを送信
