@@ -190,7 +190,7 @@ def help_command(command_source: CommandSource, target_command_name: str = None)
 
 def add_message_command_group(target, group_name, auto_save=True):
     '''ユーザーかグループにメッセージコマンドグループを追加する'''
-    if not isinstance(target, Group, User):
+    if not isinstance(target, User) and not isinstance(target, Group):
         return TypeError("GroupかUserのみ対応しています。")
     target.valid_message_command_groups = add_to_comma_separeted_string(
         target.valid_message_command_groups, group_name)
@@ -200,7 +200,7 @@ def add_message_command_group(target, group_name, auto_save=True):
 
 def remove_message_command_group(target, group_name, auto_save=True):
     '''ユーザーかグループからメッセージコマンドグループを削除する'''
-    if not isinstance(target, Group, User):
+    if not isinstance(target, User) and not isinstance(target, Group):
         return TypeError("GroupかUserのみ対応しています。")
     target.valid_message_command_groups = remove_from_comma_separeted_string(
         target.valid_message_command_groups, group_name)
