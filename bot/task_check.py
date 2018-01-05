@@ -91,9 +91,7 @@ class TaskChecker(object):
         TaskChecker.__remind_tasks(
             target_task_set, "こんばんは。明日が期限のタスクは以下のとおりだよ。", "おやすみなさい:D")
         # タスクをリマインド済みにする
-        for task in target_task_set.all():
-            task.is_tomorrow_remind_finished = True
-            task.save()
+        target_task_set.update(is_tomorrow_remind_finished=True)
         # リマインドしたタスクがあったらログに残す
         if target_task_set.exists():
             print("明日のタスク{}件のリマインドを実行。({})".format(
@@ -112,9 +110,7 @@ class TaskChecker(object):
         TaskChecker.__check_tasks(
             target_task_set, "こんにちは。\n重要なタスク「{}」が明日の{}からあるよ。", "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。")
         # タスクを確認済みにする
-        for task in target_task_set.all():
-            task.is_tomorrow_check_finished = True
-            task.save()
+        target_task_set.update(is_tomorrow_check_finished=True)
         # 確認したタスクがあったらログに残す
         if target_task_set.exists():
             print("明日の重要タスク{}件の新たな参加確認を実行({})。".format(
@@ -134,9 +130,9 @@ class TaskChecker(object):
         TaskChecker.__check_tasks(
             target_check_task_set, "おい。\n重要なタスク「{}」が{}からあるよ。", "はい。期限の近い重要なタスクがあるよ。")
         # タスクをリマインド済みにする
-        target_check_task_set.update(is_soon_check_finished = True)
+        target_remind_task_set.update(is_soon_check_finished=True)
         # タスクを確認済みにする
-        target_check_task_set.update(is_soon_check_finished = True)
+        target_check_task_set.update(is_soon_check_finished=True)
         # リマインドや確認したものがあったらログに残す
         if target_remind_task_set.exists() or target_check_task_set.exists():
             print("もうすぐのタスク{}件のリマインドと重要タスク{}件の確認を実行。({})".format(target_remind_task_set.count(), target_check_task_set.count(),
