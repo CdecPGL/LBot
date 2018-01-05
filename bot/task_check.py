@@ -1,7 +1,7 @@
 '''タスクの確認に関するクラスなど'''
 
-import datetime
 import sys
+from datetime import date, datetime, time, timedelta
 from enum import Enum
 from threading import Lock
 
@@ -13,11 +13,11 @@ from .models import Task, TaskImportance, TaskJoinCheckJob
 from .utilities import TIMEZONE_DEFAULT
 
 # 明日のタスクリマインダーの時刻
-TOMORROW_REMIND_TIME = (23, 0)
+TOMORROW_REMIND_TIME = time(hour=23, tzinfo=TIMEZONE_DEFAULT)
 # 明日のタスク確認の時刻
-TOMORROW_CHECK_TIME = (12, 0)
+TOMORROW_CHECK_TIME = time(hour=12, tzinfo=TIMEZONE_DEFAULT)
 # もうすぐのタスクリマインダーと確認をどれくらい前に行うか
-SOON_REMIND_AND_CHECK_BEFORE = (1, 0)
+SOON_REMIND_AND_CHECK_BEFORE = timedelta(hours=1)
 
 
 def convert_deadline_to_string(deadline):
@@ -28,10 +28,10 @@ def convert_deadline_to_string(deadline):
 
 def get_tommorow_range():
     '''明日の日時範囲を取得する'''
-    tommorow = datetime.date.today() + datetime.timedelta(days=1)
-    start_datetime = datetime.datetime(
+    tommorow = date.today() + timedelta(days=1)
+    start_datetime = datetime(
         tommorow.year, tommorow.month, tommorow.day, 0, 0, 0, tzinfo=TIMEZONE_DEFAULT)
-    end_datetime = datetime.datetime(
+    end_datetime = datetime(
         tommorow.year, tommorow.month, tommorow.day, 23, 59, 59, 999999, tzinfo=TIMEZONE_DEFAULT)
     return start_datetime, end_datetime
 
@@ -80,11 +80,9 @@ class TaskChecker(object):
 
     @staticmethod
     def __execute_tommorow_tasks_remind(force):
-        '''明日が期限のタスクを通知'''
-        remind_time = datetime.time(
-            TOMORROW_REMIND_TIME[0], TOMORROW_REMIND_TIME[1], tzinfo=TIMEZONE_DEFAULT)
+        '''明日が期限の全てのタスクを通知'''
         # リマインド時間前なら何もしない
-        if not force and remind_time < datetime.datetime.now(TIMEZONE_DEFAULT).timetz():
+        if not force and TOMORROW_REMIND_TIME < datetime.now(TIMEZONE_DEFAULT).timetz():
             return
         # 明日が期限でリマインドが終わってないタスクを探す
         target_task_set = Task.objects.filter(
@@ -95,15 +93,13 @@ class TaskChecker(object):
         # リマインドしたタスクがあったらログに残す
         if target_task_set.exists():
             print("明日のタスク{}件のリマインドを実行。({})".format(
-                target_task_set.count(), datetime.datetime.now(TIMEZONE_DEFAULT)))
+                target_task_set.count(), datetime.now(TIMEZONE_DEFAULT)))
 
     @staticmethod
     def __execute_tommorow_important_tasks_check(force):
-        '''明日が期限の重要タスクを通知(グループのみ)'''
-        check_time = datetime.time(
-            TOMORROW_CHECK_TIME[0], TOMORROW_CHECK_TIME[1], tzinfo=TIMEZONE_DEFAULT)
+        '''明日が期限の重要度高タスクを通知(グループのみ)'''
         # 確認時間前なら何もしない
-        if not force and check_time < datetime.datetime.now(TIMEZONE_DEFAULT).timetz():
+        if not force and TOMORROW_CHECK_TIME < datetime.now(TIMEZONE_DEFAULT).timetz():
             return
         # 明日が期限の確認していない重要タスクを取得する
         taret_task_set = Task.objects.filter(deadline__range=get_tommorow_range(
@@ -113,14 +109,26 @@ class TaskChecker(object):
             taret_task_set, "こんにちは。\n重要なタスク「{}」が明日の{}からあるよ。", "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。")
         # 確認したタスクがあったらログに残す
         if taret_task_set.exists():
-            print("明日の重要タスク{}件の参加確認を実行({})。".format(
-                taret_task_set.count(), datetime.datetime.now(TIMEZONE_DEFAULT)))
+            print("明日の重要タスク{}件の新たな参加確認を実行({})。".format(
+                taret_task_set.count(), datetime.now(TIMEZONE_DEFAULT)))
 
     @staticmethod
     def __execute_soon_tasks_remind_and_check(force):
-        '''もうすぐのタスクのリマインドとチェック(グループのみ)'''
-        print("もうすぐのタスク確認を実行({})".format(
-            datetime.datetime.now(TIMEZONE_DEFAULT)))
+        '''もうすぐのタスクのリマインド(重要度中)とチェック(重要度高)(グループのみ)'''
+        # 期限もうすぐの重要度中でリマインド終わってないタスクを取得する
+        target_remind_task_set = Task.objects.filter(
+            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, importance_=TaskImportance.Middle.name, is_soon_check_finished=False)
+        TaskChecker.__remind_tasks(
+            target_remind_task_set, "やあ。期限が近づいてるタスクがあるよ。", "忘れないようにね:-)")
+        # 期限もうすぐの重要度高でリマインド終わってないタスクを取得する
+        target_check_task_set = Task.objects.filter(
+            deadline__lte=datetime.now(TIMEZONE_DEFAULT) + SOON_REMIND_AND_CHECK_BEFORE, importance_=TaskImportance.High.name, is_soon_check_finished=False)
+        TaskChecker.__check_tasks(
+            target_check_task_set, "おい。\n重要なタスク「{}」が{}からあるよ。", "はい。期限の近い重要なタスクがあるよ。")
+        # リマインドや確認したものがあったらログに残す
+        if target_remind_task_set.exists() and target_check_task_set.exists():
+            print("もうすぐのタスク{}件のリマインドと重要タスク{}件の確認を実行。({})".format(target_remind_task_set.count(), target_check_task_set.count(),
+                                                                 datetime.now(TIMEZONE_DEFAULT)))
 
     @staticmethod
     def __remind_tasks(target_task_set, start_messege, end_message):
@@ -175,27 +183,21 @@ class TaskChecker(object):
                 line_group_id)
             # 確認タスクを追加
             check_number_count = 1
+            important_task_check_job_list = []
             for task in task_list:
-                # すでに登録されていたら飛ばす
-                if not TaskJoinCheckJob.objects.filter(task=task).exists():
+                try:
+                    task_check_job = TaskJoinCheckJob.objects.get(task=task)
+                except TaskJoinCheckJob.DoesNotExist:
                     # 空いている確認番号を探す
                     while TaskJoinCheckJob.objects.filter(check_number=check_number_count).exists():
                         check_number_count += 1
                     # タスク確認の登録(テストで期限を12時間後にする)
-                    TaskJoinCheckJob.objects.create(
-                        group=task.group, task=task, check_number=check_number_count, deadline=datetime.datetime.now() + datetime.timedelta(hours=12))
-
-            # 確認タスク一覧を作成。ここに到達するということは、新しい確認タスクが一つでもあるということで、その場合はすべて告知し直す
-            important_task_check_job_list = TaskJoinCheckJob.objects.filter(
-                group=group, task__importance=TaskImportance.High.name)
-            # 確認タスクがなかったらエラー
-            if not important_task_check_job_list.exists():
-                sys.stderr.write(
-                    "グループ「{}」で存在するべきタスク確認ジョブが存在しません。".format(group.name))
-                continue
+                    task_check_job = TaskJoinCheckJob.objects.create(
+                        group=task.group, task=task, check_number=check_number_count, deadline=datetime.now() + timedelta(hours=12))
+                important_task_check_job_list.append(task_check_job)
             # 確認番号で並び替え
             ordered_task_check_job_list = [task_check_job for task_check_job in sorted(
-                important_task_check_job_list.all(), key=lambda task_check_job: task_check_job.check_number)]
+                important_task_check_job_list, key=lambda task_check_job: task_check_job.check_number)]
 
             # 通知
             if len(ordered_task_check_job_list) == 1:
