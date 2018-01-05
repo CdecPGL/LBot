@@ -107,7 +107,7 @@ class TaskChecker(object):
             return
         # 明日が期限の確認していない重要タスクを取得する
         taret_task_set = Task.objects.filter(deadline__range=get_tommorow_range(
-        ), importance=TaskImportance.High.name, group__isnull=False, is_tomorrow_remind_finished=False)
+        ), importance=TaskImportance.High.name, group__isnull=False, is_tomorrow_check_finished=False)
         # タスクの参加確認を実行
         TaskChecker.__check_tasks(
             taret_task_set, "こんにちは。\n重要なタスク「{}」が明日の{}からあるよ。", "こんにちは。明日が期限の重要なタスクは以下のとおりだよ。")
