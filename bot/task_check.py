@@ -134,13 +134,9 @@ class TaskChecker(object):
         TaskChecker.__check_tasks(
             target_check_task_set, "おい。\n重要なタスク「{}」が{}からあるよ。", "はい。期限の近い重要なタスクがあるよ。")
         # タスクをリマインド済みにする
-        for task in target_remind_task_set.all():
-            task.is_tomorrow_remind_finished = True
-            task.save()
+        target_check_task_set.update(is_soon_check_finished = True)
         # タスクを確認済みにする
-        for task in target_check_task_set.all():
-            task.is_tomorrow_check_finished = True
-            task.save()
+        target_check_task_set.update(is_soon_check_finished = True)
         # リマインドや確認したものがあったらログに残す
         if target_remind_task_set.exists() or target_check_task_set.exists():
             print("もうすぐのタスク{}件のリマインドと重要タスク{}件の確認を実行。({})".format(target_remind_task_set.count(), target_check_task_set.count(),
