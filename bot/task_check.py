@@ -84,7 +84,7 @@ class TaskChecker(object):
         remind_time = datetime.time(
             TOMORROW_REMIND_TIME[0], TOMORROW_REMIND_TIME[1], tzinfo=TIMEZONE_DEFAULT)
         # リマインド時間前なら何もしない
-        if not force and remind_time < datetime.datetime.now(TIMEZONE_DEFAULT).time():
+        if not force and remind_time < datetime.datetime.now(TIMEZONE_DEFAULT).timetz():
             return
         # 明日が期限でリマインドが終わってないタスクを探す
         target_task_set = Task.objects.filter(
@@ -103,7 +103,7 @@ class TaskChecker(object):
         check_time = datetime.time(
             TOMORROW_CHECK_TIME[0], TOMORROW_CHECK_TIME[1], tzinfo=TIMEZONE_DEFAULT)
         # 確認時間前なら何もしない
-        if not force and check_time < datetime.datetime.now(TIMEZONE_DEFAULT).time():
+        if not force and check_time < datetime.datetime.now(TIMEZONE_DEFAULT).timetz():
             return
         # 明日が期限の確認していない重要タスクを取得する
         taret_task_set = Task.objects.filter(deadline__range=get_tommorow_range(
