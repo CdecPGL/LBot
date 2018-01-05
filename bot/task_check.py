@@ -1,8 +1,8 @@
 '''タスクの確認に関するクラスなど'''
 
+import fcntl
 from datetime import date, datetime, time, timedelta
 from enum import Enum
-from threading import Lock
 
 from linebot.models import TextSendMessage
 
@@ -49,7 +49,6 @@ class TaskCheckType(Enum):
 
 class TaskChecker(object):
     '''タスクの確認クラス'''
-    __lock = Lock()
 
     def __init__(self):
         self.__handler_map = {
@@ -66,9 +65,11 @@ class TaskChecker(object):
     @staticmethod
     def execute(task_check_type, force=False):
         '''確認を実行'''
-        # Djangoの複数プロセスから同時に呼ばれた場合に同じ処理が複数回行われることを防ぐため、スレッドロックを行う
-        with TaskChecker.__lock:
+        # Djangoの複数プロセスから同時に呼ばれた場合に同じ処理が複数回行われることを防ぐため、ファイルによる排他ロックを行う
+        with open("lock") as lock_file:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
             TaskChecker().__execute(task_check_type, force)
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
     @classmethod
     def __execute_all(cls, force):
