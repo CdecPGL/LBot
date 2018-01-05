@@ -115,8 +115,10 @@ class Task(models.Model):
         User, related_name="joinable_tasks")
     # 欠席者
     absent_members = models.ManyToManyField(User, related_name="absent_tasks")
-    # 明日のタスク確認が終わったかどうか(リマインド含む)
+    # 明日のタスク確認が終わったかどうか
     is_tomorrow_check_finished = models.BooleanField(default=False)
+    # 明日のタスクリマインドが終わったかどうか
+    is_tomorrow_remind_finished = models.BooleanField(default=False)
     # もうすぐのタスク確認が終わったかどうか(リマインド含む)
     is_soon_check_finished = models.BooleanField(default=False)
 
