@@ -18,4 +18,4 @@ class Command(BaseCommand):
         Task.objects.update(is_tomorrow_check_finished=False,
                             is_tomorrow_remind_finished=False, is_soon_check_finished=False)
         # タスク確認ジョブの削除
-        TaskJoinCheckJob.objects.delete()
+        TaskJoinCheckJob.objects.all().delete()
