@@ -25,6 +25,6 @@ class BotConfig(AppConfig):
 
         # タスクの事前確認(10分おきに確認)
         scheduler.add_job(task_check_job, "interval",
-                          hour=TASK_CHECK_INTERVAL[0], minutes=TASK_CHECK_INTERVAL[1])
+                          hours=TASK_CHECK_INTERVAL[0], minutes=TASK_CHECK_INTERVAL[1])
 
         scheduler.start()
