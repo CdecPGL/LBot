@@ -5,9 +5,9 @@ import sys
 import linebot
 
 from . import line_utilities as line_util
-from . import utilities as util
 from . import line_settings
 from .. import message_commands as mess_cmd
+from .. import utilities as util
 from ..exceptions import GroupNotFoundError, UserNotFoundError
 
 COMMAND_TRIGGER_LIST = ["#", "＃"]
