@@ -17,6 +17,8 @@ TOMORROW_REMIND_TIME = time(hour=23, tzinfo=TIMEZONE_DEFAULT)
 TOMORROW_CHECK_TIME = time(hour=12, tzinfo=TIMEZONE_DEFAULT)
 # もうすぐのタスクリマインダーと確認をどれくらい前に行うか
 SOON_REMIND_AND_CHECK_BEFORE = timedelta(hours=1)
+# タスクチェックのロックファイル
+TASK_CHECK_LOCK_FILE = "task_check_lock"
 
 
 def convert_deadline_to_string(deadline):
@@ -66,7 +68,7 @@ class TaskChecker(object):
     def execute(task_check_type, force=False):
         '''確認を実行'''
         # Djangoの複数プロセスから同時に呼ばれた場合に同じ処理が複数回行われることを防ぐため、ファイルによる排他ロックを行う
-        with open("lock") as lock_file:
+        with open(TASK_CHECK_LOCK_FILE) as lock_file:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
             TaskChecker().__execute(task_check_type, force)
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
