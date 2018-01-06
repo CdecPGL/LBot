@@ -10,33 +10,45 @@ from .standard_command import StandardMessageCommandGroup
 
 @StandardMessageCommandGroup.add_command("ユーザー名変更", UserAuthority.Editor)
 def change_user_name_command(command_source: CommandSource, target_user_name: str, new_user_name: str):
-    '''ユーザーの詳細を表示します。
+    '''ユーザー名を変更します。。
     Master権限を持つユーザーか、本人のみ実行できます。
+    グループ内ではそのグループのユーザーの名前しか変更できません。
     ■コマンド引数
     1: 対象ユーザー名
     2: 新しいユーザー名'''
-    if command_source.user_data.name == target_user_name:
-        target_user = command_source.user_data
-    elif UserAuthority[command_source.user_data.authority] == UserAuthority.Master:
-        target_user = db_util.get_user_by_name_from_database(target_user_name)
-    else:
-        return None, ["ユーザ名は本人かMasterユーザーにしか変更できないんだよね。"]
-    if User.objects.filter(name=new_user_name).exists():
-        return None, ["ユーザー名「{}」は別の人が使ってるよ".format(new_user_name)]
-    target_user.name = new_user_name
-    target_user.save()
-    return "ユーザー「{}」の名前を「{}」に変更しましたよ。".format(target_user_name, new_user_name), []
+    try:
+        if command_source.user_data.name == target_user_name:
+            target_user = command_source.user_data
+        elif UserAuthority[command_source.user_data.authority] == UserAuthority.Master:
+            target_user = db_util.get_user_by_name_from_database(
+                target_user_name)
+            # グループの場合は対象ユーザーがそのグループのメンバーでないなら見つからなかったものとする
+            if command_source.group_data and not User.objects.filter(id=target_user.id, belonging_groups=command_source.group_data).exists():
+                raise UserNotFoundError()
+        else:
+            return None, ["ユーザ名は本人かMasterユーザーにしか変更できないんだよね。"]
+        if User.objects.filter(name=new_user_name).exists():
+            return None, ["ユーザー名「{}」は別の人が使ってるよ".format(new_user_name)]
+        target_user.name = new_user_name
+        target_user.save()
+        return "ユーザー「{}」の名前を「{}」に変更しましたよ。".format(target_user_name, new_user_name), []
+    except UserNotFoundError:
+        return None, ["ユーザー「{}」が見つからないよ".format(target_user_name)]
 
 
 @StandardMessageCommandGroup.add_command("だれ", UserAuthority.Watcher)
 def check_user_command(command_source: CommandSource, target_user_name: str = None):
     '''ユーザーの情報を表示します。
     Master権限を持つユーザーか、本人のみ表示できます。
+    グループ内ではそのグループのメンバーの情報しか表示できません。
     コマンド引数
     (1: 対象のユーザー名。デフォルトは送信者)'''
     try:
         if target_user_name:
             user = db_util.get_user_by_name_from_database(target_user_name)
+            # グループの場合は対象ユーザーがそのグループのメンバーでないなら見つからなかったものとする
+            if command_source.group_data and not User.objects.filter(id=user.id, belonging_groups=command_source.group_data).exists():
+                raise UserNotFoundError()
         else:
             user = command_source.user_data
             target_user_name = command_source.user_data.name
@@ -88,11 +100,15 @@ def change_user_authority_command(command_source: CommandSource, target_user_nam
     '''ユーザーの権限を変更します。
     Master権限を持つユーザーがいなくなるような変更は行えません。
     管理しているタスクかグループがあるユーザーをWatcher権限にすることはできません。
+    グループないから実行した場合はそのグループメンバーしか対象にできません。
     ■コマンド引数
     1: 対象のユーザー名
     2: 権限。「Master」、「Editor」、「Watcher」のいずれか'''
     try:
         user = db_util.get_user_by_name_from_database(target_user_name)
+        # グループの場合は対象ユーザーがそのグループのメンバーでないなら見つからなかったものとする
+        if command_source.group_data and not User.objects.filter(id=user.id, belonging_groups=command_source.group_data).exists():
+            raise UserNotFoundError()
         try:
             current_authority = UserAuthority[user.authority]
             target_authority = UserAuthority[target_authority]

@@ -40,6 +40,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
     メッセージの送信者がタスク管理者に設定されます。タスク管理者はそのタスクのあらゆる操作を実行できます。
     参加者はそのタスクの情報を参照することができ、期限が近づくと通知されます。
     また、グループを設定すると、そのグループメンバーは参加者でなくてもそのタスクを参照できます。
+    グループからコマンドを実行した場合、参加グループは実行元のグループしか指定できない。
     ■コマンド引数
     1: タスク名
     2: 期限。"年/月/日 時:分"の形式で指定。年や時間は省略可能
@@ -83,9 +84,14 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
         # グループが指定されていたらそれを設定
         if group_name:
             try:
-                related_group = db_util.get_group_by_name_from_database(
-                    group_name)
-                new_task.group = related_group
+                # 送信元がグループならそのグループしか指定できない
+                if command_source.group_data and group_name != command_source.group_data.name:
+                    new_task.delete()
+                    return None, ["グループ内ではそのグループしか関連グループに指定できません。"]
+                else:
+                    related_group = db_util.get_group_by_name_from_database(
+                        group_name)
+                    new_task.group = related_group
             except GroupNotFoundError:
                 new_task.delete()
                 return None, ["指定されたグループ「{}」が見つりません。".format(group_name)]
@@ -146,6 +152,7 @@ def add_task_command(command_source: CommandSource, task_name: str, dead_line: s
 def list_task_command(command_source: CommandSource, target: str = None, name: str = None)->(str, [str]):
     '''タスクの一覧を表示します。
     Masterユーザー、タスクの参加者、タスクの関連グループのメンバーのみ閲覧可能です。
+    グループでコマンドを事項した場合は、そのグループのタスクのみ表示されます。
     ■コマンド引数
     (1: 「グループ」又は「ユーザー」。デフォルトは両方)
     (2: グループ又はユーザーの名前。デフォルトは送信者)'''
@@ -153,8 +160,13 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
         try:
             '''指定ユーザーのタスクをリストアップする'''
             user = db_util.get_user_by_name_from_database(name)
-            task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all(
-            ) if check_task_watch_authority(user, task)]
+            # 送信元がグループの場合はそのグループのタスクのみに絞る
+            if command_source.group_data:
+                task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.filter(
+                    group=command_source.group_data) if check_task_watch_authority(user, task)]
+            else:
+                task_name_deadline_list = [(task.name, task.deadline) for task in user.belonging_tasks.all(
+                ) if check_task_watch_authority(user, task)]
             # 期限の近い順に並び替え
             task_name_deadline_list.sort(
                 key=lambda name_deadline: name_deadline[1])
@@ -189,7 +201,7 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
         if command_source.group_data:
             return list_group_task(command_source, name if name else command_source.group_data.name)
         else:
-            return None, ["グループからのコマンドじゃないのでターゲットにグループを指定さしても意味ないよ。"]
+            return None, ["グループからのコマンドじゃないのでターゲットにグループを指定しても意味ないよ。"]
     elif target == "ユーザー":
         return list_user_task(command_source, name if name else command_source.user_data.name)
     # ターゲットが指定されてなかったらグループとユーザーの両方を列挙
@@ -211,11 +223,15 @@ def list_task_command(command_source: CommandSource, target: str = None, name: s
 def check_task_command(command_source: CommandSource, target_task_name: str)->(str, [str]):
     '''タスクの詳細を表示します。
     Masterユーザー、タスクの参加者、タスクの関連グループのメンバーのみ表示可能です。
+    グループ内ではそのグループのタスクのみ表示可能です。
     ■コマンド引数
     1: タスク名又はタスク短縮名'''
     try:
         task = db_util.get_task_by_name_or_shot_name_from_database(
             target_task_name)
+        # グループ内でそのグループ以外のタスクが指定されたら見つからないとする
+        if command_source.group_data and task.group.id != command_source.group_data.id:
+            raise TaskNotFoundError()
         # Masterユーザー、管理者、参加者、関連グループのメンバーのみ閲覧可能
         if check_task_watch_authority(command_source.user_data, task):
             reply = "<タスク詳細>\n"
@@ -262,11 +278,15 @@ def check_task_command(command_source: CommandSource, target_task_name: str)->(s
 def remove_task_command(command_source: CommandSource, target_task_name)->(str, [str]):
     '''タスクを削除します。
     Masterユーザー、タスクの管理者のみ削除可能です。
+    グループ内ではそのグループのタスクのみ削除可能です。
     ■コマンド引数
     1: タスク名又はタスク短縮名'''
     try:
         task = db_util.get_task_by_name_or_shot_name_from_database(
             target_task_name)
+        # グループ内でそのグループ以外のタスクが指定されたら見つからないとする
+        if command_source.group_data and task.group.id != command_source.group_data.id:
+            raise TaskNotFoundError()
         # Masterユーザーか、そのタスクの管理者のみ削除可能
         if check_task_edit_authority(command_source.user_data, task):
             task.delete()
@@ -283,5 +303,6 @@ def edit_task_command(command_source: CommandSource)->(str, [str]):
     Editor権限以上のユーザーでないとタスク管理者にはなれません。
     タスク管理者がいなくなるような変更は行えません。
     タスクの短縮名は全てタスク名、他のタスク短縮名と重複することはできません。
-    Masterユーザーかタスクの管理者のみ変更可能です。'''
+    Masterユーザーかタスクの管理者のみ変更可能です。
+    グループ内ではそのグループのタスクしか編集できません。'''
     return None, ["未実装"]

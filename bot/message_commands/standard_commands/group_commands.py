@@ -33,7 +33,7 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
     try:
         if target_group_name:
             # グループで指定グループが現在のグループでない場合は拒否
-            if command_source.group_data and not group.id == command_source.group_data.id:
+            if command_source.group_data and group.id != command_source.group_data.id:
                 return None, ["グループ内では他のグループの情報を見ることはできません。"]
             else:
                 group = db_util.get_group_by_name_from_database(
