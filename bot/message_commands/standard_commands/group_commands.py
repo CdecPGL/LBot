@@ -78,7 +78,7 @@ def change_group_name_command(command_source: CommandSource, new_group_name: str
     group = command_source.group_data
     if check_group_edit_authority(command_source.user_data, group):
         if Group.objects.filter(name=new_group_name).exists():
-            return None, ["グループ名「{}」はすでに存在するっ！".format(target_group_name)]
+            return None, ["グループ名「{}」はすでに存在するっ！".format(new_group_name)]
         else:
             old_group_name = group.name
             group.name = new_group_name
