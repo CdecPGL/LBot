@@ -22,7 +22,7 @@ def set_participate_state(command_source: CommandSource, target_check_number_or_
     '''タスクへの参加不参加を設定する'''
     # コマンドが実行できるかどうか確認
     if not command_source.group_data:
-        remove_message_command_group(command_source.group_data, "タスク参加確認")
+        remove_message_command_group(command_source.user_data, "タスク参加確認")
         return None, ["グループ外での実行には対応していません。"]
     checking_tasks = TaskJoinCheckJob.objects.filter(
         group=command_source.group_data)

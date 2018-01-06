@@ -28,17 +28,22 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
     '''グループの情報を表示します。
     Master権限を持つユーザーか、グループの管理者と参加者のみ表示できます。
     グループからコマンドを実行した場合はそのグループの情報しか見られません。
-    コマンド引数
+    ■コマンド引数
     (1: 対象のグループ名。デフォルトは送信グループ)'''
     try:
         if target_group_name:
-            group = db_util.get_group_by_name_from_database(target_group_name)
+            # グループで指定グループが現在のグループでない場合は拒否
+            if command_source.group_data and not group.id == command_source.group_data.id:
+                return None, ["グループ内では他のグループの情報を見ることはできません。"]
+            else:
+                group = db_util.get_group_by_name_from_database(
+                    target_group_name)
         else:
             if command_source.group_data:
                 group = command_source.group_data
-                target_group_name = "ここのグループ"
             else:
-                return "個人の会話場所。グループではない。", []
+                return "個人のトークルーム。", []
+
         if check_group_watch_authority(command_source.user_data, group):
             repply = "<グループ情報>\n"
             repply += "■グループ名\n{}\n".format(group.name)
@@ -60,25 +65,27 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
 
 
 @StandardMessageCommandGroup.add_command("グループ名変更", UserAuthority.Editor)
-def change_group_name_command(command_source: CommandSource, target_group_name: str, new_group_name: str)->(str, [str]):
-    '''グループ名を変更します。
+def change_group_name_command(command_source: CommandSource, new_group_name: str)->(str, [str]):
+    '''現在いるグループの名前を変更します。
     Masterユーザーかグループの管理者のみ変更可能です。
+    グループ外での実行はできません。
     ■コマンド引数
-    1: 対象のグループ名
-    2: 新しいグループ名'''
-    try:
-        group = db_util.get_group_by_name_from_database(target_group_name)
-        if check_group_edit_authority(command_source.user_data, group):
-            if Group.objects.filter(name=new_group_name).exists():
-                return None, ["グループ名「{}」はすでに存在するっ！".format(target_group_name)]
-            else:
-                group.name = new_group_name
-                group.save()
-                return "グループ「{}」の名前を「{}」に変更しました。".format(target_group_name, new_group_name), []
+    1: 新しいグループ名'''
+    # グループが送信元か確認
+    if not command_source.group_data:
+        return None, ["このコマンドはグループ内でしか使えません。"]
+    # 送信元のグループ名を変更
+    group = command_source.group_data
+    if check_group_edit_authority(command_source.user_data, group):
+        if Group.objects.filter(name=new_group_name).exists():
+            return None, ["グループ名「{}」はすでに存在するっ！".format(target_group_name)]
         else:
-            return None, ["グループ「{}」の変更権限がない！　グループの変更はMasterユーザーか管理者にしかできないっ！".format(target_group_name)]
-    except GroupNotFoundError:
-        return None, ["グループ「{}」はないっっっ！".format(target_group_name)]
+            old_group_name = group.name
+            group.name = new_group_name
+            group.save()
+            return "グループ「{}」の名前を「{}」に変更しました。".format(old_group_name, new_group_name), []
+    else:
+        return None, ["グループ「{}」の変更権限がない！　グループの変更はMasterユーザーか管理者にしかできないっ！".format(group.name)]
 
 
 # グループ設定
