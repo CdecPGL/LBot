@@ -83,9 +83,18 @@ def text_message_handler(event):
                 if source_group:
                     source_user = line_util.register_user_by_line_user_id_in_group(
                         event.source.user_id, event.source.group_id)
+                    # メンバーの追加を通知
+                    line_settings.api.push_message(
+                        source_group.line_group.group_id,
+                        linebot.models.TextSendMessage(text="このグループ「{}」にユーザー「{}」を追加しました。".format(source_group.name, source_user.name)))
                 else:
                     source_user = line_util.register_user_by_line_user_id(
                         event.source.user_id)
+                    # ユーザーの登録を通知
+                    line_settings.api.push_message(
+                        source_user.line_user.user_id,
+                        linebot.models.TextSendMessage(text="あなた「{}」をユーザー登録しました。".format(source_user.name)))
+
             except linebot.exceptions.LineBotApiError:
                 sys.stderr.write("LINEからユーザーのプロファイルを取得できませんでした。送信元タイプ: {}, LINEグループID: {}, LINEユーザーID: {}\n".format(
                     event.source.type, event.source.group_id, event.source.user_id))
