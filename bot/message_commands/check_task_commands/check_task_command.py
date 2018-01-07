@@ -91,7 +91,7 @@ def set_participate_state(command_source: CommandSource, target_check_number_or_
                 target_check_number_or_name)
             target_checking_task_list = checking_tasks.filter(
                 check_number__in=target_check_number_or_name_list)
-        except TaskJoinCheckJob.DoesNotExist:
+        except (TaskJoinCheckJob.DoesNotExist, ValueError):
             # 番号で当てはまらなかったらタスク名で試行する
             try:
                 target_checking_task_list = checking_tasks.filter(
