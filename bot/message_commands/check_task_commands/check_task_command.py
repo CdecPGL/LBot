@@ -153,5 +153,5 @@ def participate_command(command_source: CommandSource, target_task_number: str=N
 def absent_command(command_source: CommandSource, target_task_number: str=None):
     '''タスクに参加できないことを伝えます。
     ■コマンド引数
-    (1: 対象の確認番号かタスク名。対象タスクが一つしかない場合は省略可能)'''
+    (1: 対象の確認番号かタスク名。,か、区切りで複数指定可能。対象タスクが一つしかない場合は省略可能)'''
     return set_participate_state(command_source, target_task_number, False)
