@@ -79,12 +79,17 @@ def text_message_handler(event):
                         source_group.line_group.group_id,
                         linebot.models.TextSendMessage(text="このグループ「{}」にユーザー「{}」を追加しました。".format(source_group.name, source_user.name)))
         except UserNotFoundError:
-            if source_group:
-                source_user = line_util.register_user_by_line_user_id_in_group(
-                    event.source.user_id, event.source.group_id)
-            else:
-                source_user = line_util.register_user_by_line_user_id(
-                    event.source.user_id)
+            try:
+                if source_group:
+                    source_user = line_util.register_user_by_line_user_id_in_group(
+                        event.source.user_id, event.source.group_id)
+                else:
+                    source_user = line_util.register_user_by_line_user_id(
+                        event.source.user_id)
+            except linebot.exceptions.LineBotApiError:
+                sys.stderr.write("LINEからユーザーのプロファイルを取得できませんでした。送信元タイプ: {}, LINEグループID: {}, LINEユーザーID: {}\n".format(
+                    event.source.type, event.source.group_id, event.source.user_id))
+                raise Reject("内部エラー(送信ユーザーの情報をLINEから取得できない)")
 
         message_text = util.unify_newline_code(event.message.text)
         # コマンドとパラメータの取得
