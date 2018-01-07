@@ -48,7 +48,7 @@ def set_user_participate_state(user: User, task_check_job: TaskJoinCheckJob, is_
     # 全員の参加確認が済んでいたらそのタスク確認ジョブを削除してメッセージを出力
     if task_check_job.checked_users.count() == task.participants.count():
         task_check_job.delete()
-        reply = "\nタスク「{}」の参加確認が完了しました。\n".format(task.name)
+        reply = "タスク「{}」の参加確認が完了しました。\n".format(task.name)
         # 参加可能者
         if task.joinable_members.exists():
             joinable_str = "、".join(
