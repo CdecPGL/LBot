@@ -68,7 +68,7 @@ class TaskChecker(object):
     def execute(task_check_type, force=False):
         '''確認を実行'''
         # Djangoの複数プロセスから同時に呼ばれた場合に同じ処理が複数回行われることを防ぐため、ファイルによる排他ロックを行う
-        with open(TASK_CHECK_LOCK_FILE) as lock_file:
+        with open(TASK_CHECK_LOCK_FILE, "w") as lock_file:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
             TaskChecker().__execute(task_check_type, force)
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
