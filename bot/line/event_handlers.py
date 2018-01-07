@@ -89,7 +89,8 @@ def text_message_handler(event):
             except linebot.exceptions.LineBotApiError:
                 sys.stderr.write("LINEからユーザーのプロファイルを取得できませんでした。送信元タイプ: {}, LINEグループID: {}, LINEユーザーID: {}\n".format(
                     event.source.type, event.source.group_id, event.source.user_id))
-                raise Reject("内部エラー(送信ユーザーの情報をLINEから取得できない)")
+                raise Reject(
+                    "送信ユーザーの情報をLINEから取得できませんでした。\n公式アカウントの利用条件に合意していない場合は合意する必要があります。\nまた、LINEのバージョンは7.5.0以上である必要があります。")
 
         message_text = util.unify_newline_code(event.message.text)
         # コマンドとパラメータの取得
