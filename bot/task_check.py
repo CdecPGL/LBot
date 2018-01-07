@@ -24,12 +24,16 @@ TASK_CHECK_LOCK_FILE = "task_check_lock"
 def convert_deadline_to_string(deadline):
     '''期限を時間分の文字列に変換'''
     deadline = deadline.astimezone(TIMEZONE_DEFAULT)
-    return "{:02d}:{:02d}".format(deadline.hour, deadline.minute)
+    # 期限が今日なら日付を省略する
+    if deadline.date() == datetime.now(TIMEZONE_DEFAULT).date():
+        return "{:02d}:{:02d}".format(deadline.hour, deadline.minute)
+    else:
+        return "{}/{} {:02d}:{:02d}".format(deadline.month, deadline.day, deadline.hour, deadline.minute)
 
 
 def get_tommorow_range():
     '''明日の日時範囲を取得する'''
-    tommorow = date.today() + timedelta(days=1)
+    tommorow = (datetime.now(TIMEZONE_DEFAULT) + timedelta(days=1)).date()
     start_datetime = datetime(
         tommorow.year, tommorow.month, tommorow.day, 0, 0, 0, tzinfo=TIMEZONE_DEFAULT)
     end_datetime = datetime(
@@ -84,7 +88,7 @@ class TaskChecker(object):
     def __execute_tommorow_tasks_remind(force):
         '''明日が期限の全てのタスクを通知(グループのみ)'''
         # リマインド時間前なら何もしない
-        if not force and TOMORROW_REMIND_TIME < datetime.now(TIMEZONE_DEFAULT).timetz():
+        if not force and TOMORROW_REMIND_TIME > datetime.now(TIMEZONE_DEFAULT).timetz():
             return
         # 明日が期限でリマインドが終わってないタスクを探す
         target_task_set = Task.objects.filter(
@@ -103,7 +107,7 @@ class TaskChecker(object):
     def __execute_tommorow_important_tasks_check(force):
         '''明日が期限の重要度高タスクを通知(グループのみ)'''
         # 確認時間前なら何もしない
-        if not force and TOMORROW_CHECK_TIME < datetime.now(TIMEZONE_DEFAULT).timetz():
+        if not force and TOMORROW_CHECK_TIME > datetime.now(TIMEZONE_DEFAULT).timetz():
             return
         # 明日が期限の確認していない重要タスクを取得する
         target_task_set = Task.objects.filter(deadline__range=get_tommorow_range(
