@@ -131,7 +131,7 @@ def set_participate_state(command_source: CommandSource, target_check_number_or_
 
     # 返信を生成
     if suceeded_task_list:
-        reply = "{}に{}するんだね。了解！".format("".join(["「{}」".format(
+        reply = "すっごーい！キミは{}に{}するフレンズなんだね！".format("".join(["「{}」".format(
             task.name) for task in suceeded_task_list]), "参加" if is_participate else "欠席")
         if mess_list:
             reply += "\n\n"
