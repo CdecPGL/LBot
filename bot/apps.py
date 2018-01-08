@@ -1,6 +1,6 @@
+from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
-from apscheduler.executors.pool import ThreadPoolExecutor
 
 # タスクの確認間隔
 TASK_CHECK_INTERVAL = (0, 10)
@@ -25,11 +25,8 @@ class BotConfig(AppConfig):
             'default': ThreadPoolExecutor(1),
         }
         scheduler = BackgroundScheduler(executors=executors)
-
-        # タスクの事前確認(10分おきに確認)
+        # タスクの定期確認
         scheduler.add_job(task_check_job, "interval",
-        #                  hours=TASK_CHECK_INTERVAL[0], minutes=TASK_CHECK_INTERVAL[1])
-                          seconds=10)
-                          
+                          hours=TASK_CHECK_INTERVAL[0], minutes=TASK_CHECK_INTERVAL[1])
 
         scheduler.start()
