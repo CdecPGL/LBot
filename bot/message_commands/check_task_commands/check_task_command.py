@@ -189,5 +189,5 @@ def display_task_check_job_command(command_source: CommandSource):
             if task.absent_members.exists():
                 reply += "■欠席: {}\n".format(
                     ",".join([user.name for user in task.absent_members.all()]))
-    reply.rstrip("\n")
+    reply = reply.rstrip("\n")
     return reply, []
