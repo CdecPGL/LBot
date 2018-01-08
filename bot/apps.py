@@ -1,10 +1,9 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
-import django
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+from apscheduler.executors.pool import ThreadPoolExecutor
 
 # タスクの確認間隔
-TASK_CHECK_INTERVAL = (0, 1)
+TASK_CHECK_INTERVAL = (0, 10)
 
 
 class BotConfig(AppConfig):
@@ -18,20 +17,19 @@ class BotConfig(AppConfig):
 
         def task_check_job():
             '''明日のタスクのリマインドや確認を行うジョブ'''
-            django.setup()
-            print("job_started")
             TaskChecker.execute(TaskCheckType.All)
-            print("job_finished")
+            print("job_executed")
 
+        # Executorの数を制限しないとデータベースの接続数が増えて上限にひっかかる
         executors = {
-            'default': ThreadPoolExecutor(2),
-            # 'processpool': ProcessPoolExecutor(2),
+            'default': ThreadPoolExecutor(1),
         }
-
         scheduler = BackgroundScheduler(executors=executors)
 
         # タスクの事前確認(10分おきに確認)
         scheduler.add_job(task_check_job, "interval",
-                          hours=TASK_CHECK_INTERVAL[0], minutes=TASK_CHECK_INTERVAL[1])
+        #                  hours=TASK_CHECK_INTERVAL[0], minutes=TASK_CHECK_INTERVAL[1])
+                          seconds=10)
+                          
 
         scheduler.start()
