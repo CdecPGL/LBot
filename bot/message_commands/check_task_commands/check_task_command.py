@@ -182,7 +182,7 @@ def display_task_check_job_command(command_source: CommandSource):
         reply += "{}. {}\n".format(task_check.check_number, task.name)
         for member in task.participants.all():
             norepliers = []
-            if not task.joinable_members.filter(id=member.id).exists() and not task.absent_members.filter(id=member.id).exists():
+            if not task_check.checked_users.filter(id=member.id).exists():
                 norepliers.append(member)
         if norepliers:
             reply += "■未返信: {}\n".format(
