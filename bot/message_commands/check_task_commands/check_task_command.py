@@ -155,3 +155,37 @@ def absent_command(command_source: CommandSource, target_task_number: str=None):
     ■コマンド引数
     (1: 対象の確認番号かタスク名。,か、区切りで複数指定可能。対象タスクが一つしかない場合は省略可能)'''
     return set_participate_state(command_source, target_task_number, False)
+
+
+@CheckTaskMessageCommandGroup.add_command("確認状況", UserAuthority.Watcher)
+def display_task_check_job_command(command_source: CommandSource):
+    '''タスク参加確認の状況を表示します。'''
+    if not command_source.group_data:
+        remove_message_command_group(command_source.user_data, "タスク参加確認")
+        return None, ["グループ外での実行には対応していません。"]
+
+    checking_tasks = TaskJoinCheckJob.objects.filter(
+        group=command_source.group_data)
+    if not checking_tasks.exists():
+        remove_message_command_group(command_source.group_data, "タスク参加確認")
+        return "このグループで現在確認中のタスクはありません。", []
+
+    reply = "このグループでのタスク参加確認状況は以下のとおりです。\n"
+    for task_check in checking_tasks:
+        task = task_check.task
+        reply += "<{}>".format(task.name)
+        norepliers = []
+        for member in task.participants:
+            if not task.joinable_members.filter(id=member.id).exists() and not task.absent_members.filter(id=member.id).exists():
+                norepliers.append(member)
+            if norepliers:
+                reply += "■未返信: {}\n".format(
+                    ",".join([user.name for user in norepliers]))
+            if task.joinable_members.exists():
+                reply += "■参加可能: {}\n".format(
+                    ",".join([user.name for user in task.joinable_members]))
+            if task.absent_members.exists():
+                reply += "■欠席: {}\n".format(
+                    ",".join([user.name for user in task.absent_members]))
+        reply.rstrip("\n")
+    return reply, []
