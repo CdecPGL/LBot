@@ -2,7 +2,7 @@
 
 import random
 
-from bot.models import Vocabulary
+from .models import Vocabulary
 
 KNOW_BUT_LIST = ["は知ってるけど、", "は当たり前だね。でも",
                  "は最近はやってるよ。だけど", "は常識だよ。ところで", "はすごいよね。By the way, "]
@@ -15,7 +15,7 @@ MAX_VOCABLARY_COUNT = 1000
 
 def generate_random_word()->str:
     '''ランダムな単語を生成する'''
-    if Vocabulary.objects.count():
+    if Vocabulary.objects.exists():
         return Vocabulary.objects.order_by('?')[0].word
     else:
         return "何にも分からない……"

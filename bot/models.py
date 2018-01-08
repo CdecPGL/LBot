@@ -1,8 +1,22 @@
+from enum import Enum
+
 from django.db import models
 
 from bot.authorities import UserAuthority
 
 # Create your models here.
+
+
+class TaskImportance(Enum):
+    '''タスクの重要度'''
+    High = "高"
+    Middle = "中"
+    Low = "低"
+
+
+def get_choices_from_enum(source_enum):
+    '''列挙体から選択肢を取得'''
+    return [(item.name, item.name) for item in source_enum]
 
 
 class Vocabulary(models.Model):
@@ -26,11 +40,6 @@ class AsanaUser(models.Model):
 
 class User(models.Model):
     '''ユーザーデータベース'''
-    AUTHORITY_CHOICES = (
-        (UserAuthority.Master.name, UserAuthority.Master.name),
-        (UserAuthority.Editor.name, UserAuthority.Editor.name),
-        (UserAuthority.Watcher.name, UserAuthority.Watcher.name),
-    )
     # ユーザー名。そのユーザー自身のみ設定可能
     name = models.CharField(max_length=64, unique=True)
     # LINEのユーザー情報。そのユーザーのみ設定可能
@@ -40,7 +49,10 @@ class User(models.Model):
     asana_user = models.OneToOneField(
         AsanaUser, on_delete=models.SET_NULL, null=True)
     # 権限。Masterユーザーのみ変更可能
-    authority = models.CharField(max_length=16, choices=AUTHORITY_CHOICES)
+    authority = models.CharField(
+        max_length=16, choices=get_choices_from_enum(UserAuthority))
+    # 有効なメッセージコマンドグループ。カンマ区切りで複数指定
+    valid_message_command_groups = models.CharField(max_length=256, default="")
 
 
 class LineGroup(models.Model):
@@ -68,6 +80,8 @@ class Group(models.Model):
     # AsanaTeam。グループ管理者のみ変更可能
     asana_team = models.OneToOneField(
         AsanaTeam, on_delete=models.SET_NULL, null=True)
+    # 有効なメッセージコマンドグループ。カンマ区切りで複数指定
+    valid_message_command_groups = models.CharField(max_length=256, default="")
 
 
 class AsanaTask(models.Model):
@@ -83,14 +97,43 @@ class Task(models.Model):
     short_name = models.CharField(max_length=64, unique=True, null=True)
     # 締め切り。タスク作成時に設定。タスクマスターのみ変更可能
     deadline = models.DateTimeField()
+    # 重要度
+    importance = models.CharField(max_length=16, choices=get_choices_from_enum(
+        TaskImportance), default=TaskImportance.Middle.name)
     # タスクの管理者。タスク管理者のみ変更可能
     managers = models.ManyToManyField(User, related_name="managing_tasks")
     # タスクの参加者。タスク管理者のみ変更可能
     participants = models.ManyToManyField(User, related_name="belonging_tasks")
     # タスクの参加グループ。タスク管理者のみ変更可能
-    groups = models.ManyToManyField(Group, related_name="tasks")
+    group = models.ForeignKey(
+        Group, on_delete=models.SET_NULL, related_name="tasks", null=True)
     # Asanaタスク。タスク管理者のみ変更可能
     asana_task = models.OneToOneField(
         AsanaTask, on_delete=models.SET_NULL, null=True)
-    # グループメンバー全員参加かどうか
-    is_participate_all_in_groups = models.BooleanField(default=False)
+    # 参加可能者
+    joinable_members = models.ManyToManyField(
+        User, related_name="joinable_tasks")
+    # 欠席者
+    absent_members = models.ManyToManyField(User, related_name="absent_tasks")
+    # 明日のタスク確認が終わったかどうか
+    is_tomorrow_check_finished = models.BooleanField(default=False)
+    # 明日のタスクリマインドが終わったかどうか
+    is_tomorrow_remind_finished = models.BooleanField(default=False)
+    # もうすぐのタスク確認が終わったかどうか(リマインド含む)
+    is_soon_check_finished = models.BooleanField(default=False)
+
+
+class TaskJoinCheckJob(models.Model):
+    '''タスクの参加チェックジョブデータベース'''
+    # 対象のグループ
+    group = models.ForeignKey(
+        Group, on_delete=models.CASCADE, related_name="task_checks")
+    # 対象のタスク
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, unique=True)
+    # 確認が取れたユーザー
+    checked_users = models.ManyToManyField(
+        User, related_name="checked_task_join_check_job")
+    # グループ内でのタスクチェック番号
+    check_number = models.PositiveIntegerField()
+    # チェックの期限
+    deadline = models.DateTimeField()

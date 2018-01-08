@@ -1,13 +1,15 @@
+'''LINEイベントのハンドラ'''
+
 import sys
 
 import linebot
-
-import bot.message_commands as mess_cmd
-import bot.utilities as util
-from bot.exceptions import GroupNotFoundError, UserNotFoundError
+from django.db.utils import OperationalError
 
 from . import line_utilities as line_util
 from . import line_settings
+from .. import message_commands as mess_cmd
+from .. import utilities as util
+from ..exceptions import GroupNotFoundError, UserNotFoundError
 
 COMMAND_TRIGGER_LIST = ["#", "＃"]
 SENTENCE_MAX_LENGTH = 64
@@ -72,15 +74,33 @@ def text_message_handler(event):
                 event.source.user_id)
             # グループへメンバーが登録されているか確認し必要なら登録
             if source_group:
-                line_util.check_and_add_member_to_group(
-                    source_user, source_group)
+                if line_util.add_member_to_group_if_need(source_user, source_group):
+                    # メンバーの追加を通知
+                    line_settings.api.push_message(
+                        source_group.line_group.group_id,
+                        linebot.models.TextSendMessage(text="このグループ「{}」にユーザー「{}」を追加しました。".format(source_group.name, source_user.name)))
         except UserNotFoundError:
-            if source_group:
-                source_user = line_util.register_user_by_line_user_id_in_group(
-                    event.source.user_id, event.source.group_id)
-            else:
-                source_user = line_util.register_user_by_line_user_id(
-                    event.source.user_id)
+            try:
+                if source_group:
+                    source_user = line_util.register_user_by_line_user_id_in_group(
+                        event.source.user_id, event.source.group_id)
+                    # メンバーの追加を通知
+                    line_settings.api.push_message(
+                        source_group.line_group.group_id,
+                        linebot.models.TextSendMessage(text="このグループ「{}」にユーザー「{}」を追加しました。".format(source_group.name, source_user.name)))
+                else:
+                    source_user = line_util.register_user_by_line_user_id(
+                        event.source.user_id)
+                    # ユーザーの登録を通知
+                    line_settings.api.push_message(
+                        source_user.line_user.user_id,
+                        linebot.models.TextSendMessage(text="あなた「{}」をユーザー登録しました。".format(source_user.name)))
+
+            except linebot.exceptions.LineBotApiError:
+                sys.stderr.write("LINEからユーザーのプロファイルを取得できませんでした。送信元タイプ: {}, LINEグループID: {}, LINEユーザーID: {}\n".format(
+                    event.source.type, event.source.group_id, event.source.user_id))
+                raise Reject(
+                    "送信ユーザーの情報をLINEから取得できませんでした。\n公式アカウントの利用条件に合意していない場合は合意する必要があります。\nまた、LINEのバージョンは7.5.0以上である必要があります。")
 
         message_text = util.unify_newline_code(event.message.text)
         # コマンドとパラメータの取得
@@ -121,7 +141,8 @@ def text_message_handler(event):
         if command:
             # コマンド実行
             command_source = mess_cmd.CommandSource(source_user, source_group)
-            reply = mess_cmd.execute_command(command, command_source, params)
+            reply = mess_cmd.execute_message_command(
+                command, command_source, params)
             # グループの時は宛先を表示
             if source_group:
                 reply = "@{}\n{}".format(source_user.name, reply)
@@ -133,11 +154,18 @@ def text_message_handler(event):
             event.reply_token,
             linebot.models.TextSendMessage(text=reject.message))
         return
+    except OperationalError:
+        sys.stderr.write(
+            "データベース操作でエラーが発生しました。({})\n".format(sys.exc_info()[1]))
+        line_settings.api.reply_message(
+            event.reply_token,
+            linebot.models.TextSendMessage(text="内部エラー(データベース操作でエラーが発生)"))
+        raise
     except Exception:
         try:
             line_settings.api.reply_message(
                 event.reply_token,
-                linebot.models.TextSendMessage(text="なんかこっち側で問題が起こった。"))
+                linebot.models.TextSendMessage(text="なんかこっち側で謎の問題が起こった。"))
         except Exception:
             pass
         raise

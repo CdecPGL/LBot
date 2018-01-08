@@ -1,7 +1,8 @@
 '''データベース関連のユーティリティ'''
 
-from bot.models import User, Group, Task
-from bot.exceptions import UserNotFoundError, GroupNotFoundError, TaskNotFoundError
+from .exceptions import (GroupNotFoundError, TaskNotFoundError,
+                         UserNotFoundError)
+from .models import Group, Task, User
 
 
 def get_user_by_name_from_database(name: str)->User:
