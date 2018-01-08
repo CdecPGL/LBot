@@ -19,6 +19,15 @@ class CheckTaskMessageCommandGroup(MessageCommandGroupBase):
     suggestion_word_match_rate_threshold = 0.8
 
 
+def disable_task_check_command_if_need(command_source: CommandSource):
+    '''必要ならタスク確認コマンドを無効にする'''
+    if command_source.group_data:
+        if not TaskJoinCheckJob.objects.filter(group=command_source.group_data).exists():
+            remove_message_command_group(command_source.group_data, "タスク参加確認")
+    else:
+        remove_message_command_group(command_source.user_data, "タスク参加確認")
+
+
 def set_user_participate_state(user: User, task_check_job: TaskJoinCheckJob, is_participate: bool):
     '''ユーザーのタスク参加状態を設定する'''
     task = task_check_job.task
@@ -126,8 +135,7 @@ def set_participate_state(command_source: CommandSource, target_check_number_or_
                 error_list.append(mess)
 
     # タスク確認ジョブがなくなったらタスクの確認を終了する
-    if not TaskJoinCheckJob.objects.filter(group=command_source.group_data).exists():
-        remove_message_command_group(command_source.group_data, "タスク参加確認")
+    disable_task_check_command_if_need(command_source)
 
     # 返信を生成
     if suceeded_task_list:
@@ -155,3 +163,43 @@ def absent_command(command_source: CommandSource, target_task_number: str=None):
     ■コマンド引数
     (1: 対象の確認番号かタスク名。,か、区切りで複数指定可能。対象タスクが一つしかない場合は省略可能)'''
     return set_participate_state(command_source, target_task_number, False)
+
+
+@CheckTaskMessageCommandGroup.add_command("確認状況", UserAuthority.Watcher)
+def display_task_check_job_command(command_source: CommandSource):
+    '''タスク参加確認の状況を表示します。
+    ■コマンド引数
+    なし'''
+    if not command_source.group_data:
+        remove_message_command_group(command_source.user_data, "タスク参加確認")
+        return None, ["グループ外での実行には対応していません。"]
+
+    checking_tasks = TaskJoinCheckJob.objects.filter(
+        group=command_source.group_data)
+    if not checking_tasks.exists():
+        remove_message_command_group(command_source.group_data, "タスク参加確認")
+        return "このグループで現在確認中のタスクはありません。", []
+
+    # 確認番号で並び替え
+    checking_tasks = [check_task for check_task in sorted(
+        checking_tasks.all(), key=lambda check_task: check_task.check_number)]
+
+    reply = "このグループでのタスク参加確認状況は以下のとおりです。\n"
+    for task_check in checking_tasks:
+        task = task_check.task
+        reply += "{}. {}\n".format(task_check.check_number, task.name)
+        for member in task.participants.all():
+            norepliers = []
+            if not task_check.checked_users.filter(id=member.id).exists():
+                norepliers.append(member)
+        if norepliers:
+            reply += "■未返信: {}\n".format(
+                ",".join([user.name for user in norepliers]))
+        if task.joinable_members.exists():
+            reply += "■参加可能: {}\n".format(
+                ",".join([user.name for user in task.joinable_members.all()]))
+        if task.absent_members.exists():
+            reply += "■欠席: {}\n".format(
+                ",".join([user.name for user in task.absent_members.all()]))
+    reply = reply.rstrip("\n")
+    return reply, []

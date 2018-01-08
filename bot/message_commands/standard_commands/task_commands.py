@@ -11,6 +11,7 @@ from ...exceptions import (GroupNotFoundError, TaskNotFoundError,
                            UserNotFoundError)
 from ...models import Task, TaskImportance, User
 from ...utilities import TIMEZONE_DEFAULT
+from ..check_task_commands import disable_task_check_command_if_need
 from ..message_command import CommandSource
 from .standard_command import StandardMessageCommandGroup
 
@@ -290,6 +291,7 @@ def remove_task_command(command_source: CommandSource, target_task_name)->(str, 
         # Masterユーザーか、そのタスクの管理者のみ削除可能
         if check_task_edit_authority(command_source.user_data, task):
             task.delete()
+            disable_task_check_command_if_need(command_source)
             return "タスク「{}」を削除しました。".format(target_task_name), []
         else:
             return None, ["タスクの編集権限がありません。タスクの編集は Masterユーザー、タスクの管理者のみ可能ですー。"]
