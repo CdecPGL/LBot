@@ -1,5 +1,6 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
+import django
 
 # タスクの確認間隔
 TASK_CHECK_INTERVAL = (0, 1)
@@ -16,6 +17,7 @@ class BotConfig(AppConfig):
 
         def task_check_job():
             '''明日のタスクのリマインドや確認を行うジョブ'''
+            django.setup()
             print("job_started")
             TaskChecker.execute(TaskCheckType.All)
             print("job_finished")
