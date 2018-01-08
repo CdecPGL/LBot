@@ -2,7 +2,8 @@
 
 from django.core.management.base import BaseCommand
 
-from ...models import Task, TaskJoinCheckJob
+from ...message_commands import remove_message_command_group
+from ...models import Group, Task, TaskJoinCheckJob, User
 
 
 class Command(BaseCommand):
@@ -19,3 +20,8 @@ class Command(BaseCommand):
                             is_tomorrow_remind_finished=False, is_soon_check_finished=False)
         # タスク確認ジョブの削除
         TaskJoinCheckJob.objects.all().delete()
+        # タスク参加確認コマンドを無効化
+        for user in User.objects.all():
+            remove_message_command_group(user, "タスク参加確認")
+        for group in Group.objects.all():
+            remove_message_command_group(group, "タスク参加確認")
