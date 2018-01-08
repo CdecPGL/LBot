@@ -3,6 +3,7 @@
 import sys
 
 import linebot
+from django.db.utils import OperationalError
 
 from . import line_utilities as line_util
 from . import line_settings
@@ -153,6 +154,13 @@ def text_message_handler(event):
             event.reply_token,
             linebot.models.TextSendMessage(text=reject.message))
         return
+    except OperationalError:
+        sys.stderr.write(
+            "データベース操作でエラーが発生しました。({})\n".format(sys.exc_info()[1]))
+        line_settings.api.reply_message(
+            event.reply_token,
+            linebot.models.TextSendMessage(text="内部エラー(データベース操作でエラーが発生)"))
+        raise
     except Exception:
         try:
             line_settings.api.reply_message(
