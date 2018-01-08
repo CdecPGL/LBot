@@ -172,10 +172,14 @@ def display_task_check_job_command(command_source: CommandSource):
         remove_message_command_group(command_source.group_data, "タスク参加確認")
         return "このグループで現在確認中のタスクはありません。", []
 
+    # 確認番号で並び替え
+    checking_tasks = [check_task for check_task in sorted(
+        checking_tasks.all(), key=lambda check_task: check_task.check_number)]
+
     reply = "このグループでのタスク参加確認状況は以下のとおりです。\n"
     for task_check in checking_tasks:
         task = task_check.task
-        reply += "<{}>\n".format(task.name)
+        reply += "{}. {}\n".format(task_check.check_number, task.name)
         for member in task.participants.all():
             norepliers = []
             if not task.joinable_members.filter(id=member.id).exists() and not task.absent_members.filter(id=member.id).exists():
