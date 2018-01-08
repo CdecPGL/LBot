@@ -173,9 +173,9 @@ def display_task_check_job_command(command_source: CommandSource):
     reply = "このグループでのタスク参加確認状況は以下のとおりです。\n"
     for task_check in checking_tasks:
         task = task_check.task
-        reply += "<{}>".format(task.name)
-        norepliers = []
-        for member in task.participants:
+        reply += "<{}>\n".format(task.name)
+        for member in task.participants.all():
+            norepliers = []
             if not task.joinable_members.filter(id=member.id).exists() and not task.absent_members.filter(id=member.id).exists():
                 norepliers.append(member)
             if norepliers:
@@ -183,9 +183,9 @@ def display_task_check_job_command(command_source: CommandSource):
                     ",".join([user.name for user in norepliers]))
             if task.joinable_members.exists():
                 reply += "■参加可能: {}\n".format(
-                    ",".join([user.name for user in task.joinable_members]))
+                    ",".join([user.name for user in task.joinable_members.all()]))
             if task.absent_members.exists():
                 reply += "■欠席: {}\n".format(
-                    ",".join([user.name for user in task.absent_members]))
+                    ",".join([user.name for user in task.absent_members.all()]))
         reply.rstrip("\n")
     return reply, []
