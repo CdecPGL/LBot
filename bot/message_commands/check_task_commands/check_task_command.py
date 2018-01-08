@@ -180,14 +180,14 @@ def display_task_check_job_command(command_source: CommandSource):
             norepliers = []
             if not task.joinable_members.filter(id=member.id).exists() and not task.absent_members.filter(id=member.id).exists():
                 norepliers.append(member)
-            if norepliers:
-                reply += "■未返信: {}\n".format(
-                    ",".join([user.name for user in norepliers]))
-            if task.joinable_members.exists():
-                reply += "■参加可能: {}\n".format(
-                    ",".join([user.name for user in task.joinable_members.all()]))
-            if task.absent_members.exists():
-                reply += "■欠席: {}\n".format(
-                    ",".join([user.name for user in task.absent_members.all()]))
+        if norepliers:
+            reply += "■未返信: {}\n".format(
+                ",".join([user.name for user in norepliers]))
+        if task.joinable_members.exists():
+            reply += "■参加可能: {}\n".format(
+                ",".join([user.name for user in task.joinable_members.all()]))
+        if task.absent_members.exists():
+            reply += "■欠席: {}\n".format(
+                ",".join([user.name for user in task.absent_members.all()]))
     reply = reply.rstrip("\n")
     return reply, []
