@@ -40,7 +40,7 @@ def change_user_name_command(command_source: CommandSource, target_user_name: st
 def check_user_command(command_source: CommandSource, target_user_name: str = None):
     '''ユーザーの情報を表示します。
     Master権限を持つユーザーか、本人のみ表示できます。
-    グループ内ではそのグループのメンバーの情報しか表示できません。
+    グループ内ではそのグループのメンバーの情報しか表示せず、タスクもそのグループに剣連したものしか表示しません。。
     コマンド引数
     (1: 対象のユーザー名。デフォルトは送信者)'''
     try:
@@ -69,13 +69,20 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
         else:
             managing_groups_str = "なし"
         repply += "■管理グループ\n{}\n".format(managing_groups_str)
-        # 管理タスク
-        if user.managing_tasks.exists():
-            managing_tasks_str = "、".join(
-                [task.name for task in user.managing_tasks.all()])
+        # 管理タスク(グループないならそのグループに関連したタスクのみ表示)
+        if command_source.group_data:
+            header_str = "{}での管理タスク".format(command_source.group_data.name)
+            managing_tasks = user.managing_tasks.filter(
+                group=command_source.group_data)
         else:
-            managing_tasks_str = "なし"
-        repply += "■管理タスク\n{}\n".format(managing_tasks_str)
+            header_str = "管理タスク"
+            managing_tasks = user.managing_tasks
+        if managing_tasks.exists():
+            managing_tasks_str = "、".join(
+                [task.name for task in managing_tasks.all()])
+            repply += "■{}\n{}\n".format(header_str, managing_tasks_str)
+        else:
+            repply += "なし\n"
         # 参加グループ
         if user.belonging_groups.exists():
             belonging_groups_str = "、".join(
@@ -83,13 +90,20 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
         else:
             belonging_groups_str = "なし"
         repply += "■参加グループ\n{}\n".format(belonging_groups_str)
-        # 参加タスク
-        if user.belonging_tasks.exists():
-            belonging_tasks_str = "、".join(
-                [task.name for task in user.belonging_tasks.all()])
+        # 参加タスク(グループないならそのグループに関連したタスクのみ表示)
+        if command_source.group_data:
+            header_str = "{}での参加タスク".format(command_source.group_data.name)
+            belonging_tasks = user.belonging_tasks.filter(
+                group=command_source.group_data)
         else:
-            belonging_tasks_str = "なし"
-        repply += "■参加タスク\n{}".format(belonging_tasks_str)
+            header_str = "参加タスク"
+            belonging_tasks = user.belonging_tasks
+        if belonging_tasks.exists():
+            belonging_tasks_str = "、".join(
+                [task.name for task in belonging_tasks.all()])
+            repply += "■{}\n{}".format(header_str, belonging_tasks_str)
+        else:
+            repply += "なし"
         return repply, []
     except UserNotFoundError:
         return None, ["ユーザー「{}」はいないっぽい。".format(target_user_name)]

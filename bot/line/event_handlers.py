@@ -165,7 +165,7 @@ def text_message_handler(event):
         try:
             line_settings.api.reply_message(
                 event.reply_token,
-                linebot.models.TextSendMessage(text="なんかこっち側で問題が起こった。"))
+                linebot.models.TextSendMessage(text="なんかこっち側で謎の問題が起こった。"))
         except Exception:
             pass
         raise
