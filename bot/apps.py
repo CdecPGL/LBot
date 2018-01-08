@@ -16,7 +16,9 @@ class BotConfig(AppConfig):
 
         def task_check_job():
             '''明日のタスクのリマインドや確認を行うジョブ'''
+            print("job_started")
             TaskChecker.execute(TaskCheckType.All)
+            print("job_finished")
 
         scheduler = BackgroundScheduler()
 
