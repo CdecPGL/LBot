@@ -66,9 +66,7 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
         if user.managing_groups.exists():
             managing_groups_str = "、".join(
                 [group.name for group in user.managing_groups.all()])
-        else:
-            managing_groups_str = "なし"
-        repply += "■管理グループ\n{}\n".format(managing_groups_str)
+            repply += "■管理グループ\n{}\n".format(managing_groups_str)
         # 管理タスク(グループないならそのグループに関連したタスクのみ表示)
         if command_source.group_data:
             header_str = "{}での管理タスク".format(command_source.group_data.name)
@@ -81,8 +79,6 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
             managing_tasks_str = "、".join(
                 [task.name for task in managing_tasks.all()])
             repply += "■{}\n{}\n".format(header_str, managing_tasks_str)
-        else:
-            repply += "なし\n"
         # 参加グループ
         if user.belonging_groups.exists():
             belonging_groups_str = "、".join(
@@ -101,9 +97,9 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
         if belonging_tasks.exists():
             belonging_tasks_str = "、".join(
                 [task.name for task in belonging_tasks.all()])
-            repply += "■{}\n{}".format(header_str, belonging_tasks_str)
         else:
-            repply += "なし"
+            belonging_tasks_str = "なし"
+        repply += "■{}\n{}".format(header_str, belonging_tasks_str)
         return repply, []
     except UserNotFoundError:
         return None, ["ユーザー「{}」はいないっぽい。".format(target_user_name)]
