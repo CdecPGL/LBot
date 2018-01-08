@@ -19,6 +19,15 @@ class CheckTaskMessageCommandGroup(MessageCommandGroupBase):
     suggestion_word_match_rate_threshold = 0.8
 
 
+def disable_task_check_command_if_need(command_source: CommandSource):
+    '''必要ならタスク確認コマンドを無効にする'''
+    if command_source.group_data:
+        if not TaskJoinCheckJob.objects.filter(group=command_source.group_data).exists():
+            remove_message_command_group(command_source.group_data, "タスク参加確認")
+    else:
+        remove_message_command_group(command_source.user_data, "タスク参加確認")
+
+
 def set_user_participate_state(user: User, task_check_job: TaskJoinCheckJob, is_participate: bool):
     '''ユーザーのタスク参加状態を設定する'''
     task = task_check_job.task
@@ -126,8 +135,7 @@ def set_participate_state(command_source: CommandSource, target_check_number_or_
                 error_list.append(mess)
 
     # タスク確認ジョブがなくなったらタスクの確認を終了する
-    if not TaskJoinCheckJob.objects.filter(group=command_source.group_data).exists():
-        remove_message_command_group(command_source.group_data, "タスク参加確認")
+    disable_task_check_command_if_need(command_source)
 
     # 返信を生成
     if suceeded_task_list:
