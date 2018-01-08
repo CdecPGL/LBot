@@ -7,6 +7,8 @@ import re
 TIMEZONE_JST = datetime.timezone(datetime.timedelta(hours=+9), 'JST')
 # デフォルトのタイムゾーン
 TIMEZONE_DEFAULT = TIMEZONE_JST
+# メンテナンスモード
+ENABLE_MAINTENANCE_MODE = True
 
 
 def unify_newline_code(text: str)->str:

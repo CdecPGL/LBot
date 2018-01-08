@@ -61,6 +61,45 @@ def text_message_handler(event):
             self.message = message
 
     try:
+        message_text = util.unify_newline_code(event.message.text)
+        # コマンドとパラメータの取得
+        command_param = None
+        if event.source.type == "user":
+            command_param = message_text
+        elif event.source.type == "group":
+            # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
+            # メッセージがコマンド開始文字列と全く同じ場合はリジェクト
+            if any([command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text == command_trigger]):
+                raise Reject("なんか言いたまへ(@_@)")
+            hit_command_trigger_list = [
+                command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
+            if hit_command_trigger_list:
+                command_param = message_text[len(hit_command_trigger_list[0]):]
+        else:
+            sys.stderr.write('送信元"{}"には対応していません。\n'.format(event.source.type))
+            raise Reject("グループラインか個人ラインで話そう、、、")
+
+        # コマンドとパラメータの抽出
+        command = None
+        params = []
+        if command_param:
+            # 左右の空白は取り除く
+            items = [item.strip() for item in command_param.split("\n")]
+            print(items)
+            # 文字列の長さが規定値を超えていたらリジェクト
+            if any([len(item) > SENTENCE_MAX_LENGTH for item in items]):
+                raise Reject("長文は受け付けません(´ε｀ )")
+            # コマンド文字列が空だったらリジェクト
+            if not items or not items[0]:
+                raise Reject("もうちょっと喋って？")
+            command = items[0]
+            if len(items) > 1:
+                params = items[1:]
+
+        # コマンドが指定されてメンテナンス中なら中断
+        if command and util.ENABLE_MAINTENANCE_MODE:
+            raise Reject("メンテナンス中です。。。")
+
         # メッセージ送信グループをデータベースから検索し、なかったら作成
         try:
             source_group = line_util.get_group_by_line_group_id_from_database(
@@ -101,41 +140,6 @@ def text_message_handler(event):
                     event.source.type, event.source.group_id, event.source.user_id))
                 raise Reject(
                     "送信ユーザーの情報をLINEから取得できませんでした。\n公式アカウントの利用条件に合意していない場合は合意する必要があります。\nまた、LINEのバージョンは7.5.0以上である必要があります。")
-
-        message_text = util.unify_newline_code(event.message.text)
-        # コマンドとパラメータの取得
-        command_param = None
-        if event.source.type == "user":
-            command_param = message_text
-        elif event.source.type == "group":
-            # 送信元がユーザーでないグループの場合はコマンドトリガーを確認する
-            # メッセージがコマンド開始文字列と全く同じ場合はリジェクト
-            if any([command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text == command_trigger]):
-                raise Reject("なんか言いたまへ(@_@)")
-            hit_command_trigger_list = [
-                command_trigger for command_trigger in COMMAND_TRIGGER_LIST if message_text.startswith(command_trigger)]
-            if hit_command_trigger_list:
-                command_param = message_text[len(hit_command_trigger_list[0]):]
-        else:
-            sys.stderr.write('送信元"{}"には対応していません。\n'.format(event.source.type))
-            raise Reject("グループラインか個人ラインで話そう、、、")
-
-        # コマンドとパラメータの抽出
-        command = None
-        params = []
-        if command_param:
-            # 左右の空白は取り除く
-            items = [item.strip() for item in command_param.split("\n")]
-            print(items)
-            # 文字列の長さが規定値を超えていたらリジェクト
-            if any([len(item) > SENTENCE_MAX_LENGTH for item in items]):
-                raise Reject("長文は受け付けません(´ε｀ )")
-            # コマンド文字列が空だったらリジェクト
-            if not items or not items[0]:
-                raise Reject("もうちょっと喋って？")
-            command = items[0]
-            if len(items) > 1:
-                params = items[1:]
 
         # コマンドを実行し返信を送信。コマンドがない(自分宛てのメッセージではない)場合は返信しない
         if command:
