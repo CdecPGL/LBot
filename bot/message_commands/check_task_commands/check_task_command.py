@@ -159,7 +159,9 @@ def absent_command(command_source: CommandSource, target_task_number: str=None):
 
 @CheckTaskMessageCommandGroup.add_command("確認状況", UserAuthority.Watcher)
 def display_task_check_job_command(command_source: CommandSource):
-    '''タスク参加確認の状況を表示します。'''
+    '''タスク参加確認の状況を表示します。
+    ■コマンド引数
+    なし'''
     if not command_source.group_data:
         remove_message_command_group(command_source.user_data, "タスク参加確認")
         return None, ["グループ外での実行には対応していません。"]
@@ -187,5 +189,5 @@ def display_task_check_job_command(command_source: CommandSource):
             if task.absent_members.exists():
                 reply += "■欠席: {}\n".format(
                     ",".join([user.name for user in task.absent_members.all()]))
-        reply.rstrip("\n")
+    reply.rstrip("\n")
     return reply, []
