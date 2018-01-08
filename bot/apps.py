@@ -2,7 +2,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
 
 # タスクの確認間隔
-TASK_CHECK_INTERVAL = (0, 10)
+TASK_CHECK_INTERVAL = (0, 1)
 
 
 class BotConfig(AppConfig):
