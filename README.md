@@ -35,3 +35,7 @@ function HerokuNotifier() {
   UrlFetchApp.fetch(url, { muteHttpExceptions:true });
 }
 ```
+
+## LICENCE
+
+このリポジトリのソースコードは[MITライセンス](LICENSE)のもと公開しています。
