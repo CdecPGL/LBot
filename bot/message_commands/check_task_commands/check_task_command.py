@@ -24,7 +24,7 @@ def disable_task_check_command_if_need(command_source: CommandSource):
     if command_source.group_data:
         if not TaskJoinCheckJob.objects.filter(group=command_source.group_data).exists():
             remove_message_command_group(command_source.group_data, "タスク参加確認")
-    else:
+    elif command_source.user_data:
         remove_message_command_group(command_source.user_data, "タスク参加確認")
 
 

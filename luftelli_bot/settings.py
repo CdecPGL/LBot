@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+import sys
+
 import dj_database_url
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -24,9 +26,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'w@m^wot=o_qnxr)!5_v7omzmn!@e6pt%ukbd0=7*acddvx&%m@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+try:
+    DEBUG = bool(int(os.getenv("LBOT_ENABLE_DEBUG_MODE", "0")))
+except ValueError:
+    sys.stderr.write(
+        '環境変数"LBOT_ENABLE_DEBUG_MODE"の値が不正です。"LBOT_ENABLE_DEBUG_MODE"は0か1である必要があります。デバッグモードは無効の状態で開始します。\n')
+    DEBUG = False
 
-#デプロイ後のアクセス時の"Invalid HTTP_HOST header" 対策でherokuのアプリURLを追加
+# デプロイ後のアクセス時の"Invalid HTTP_HOST header" 対策でherokuのアプリURLを追加
 ALLOWED_HOSTS = ["luftelli-bot.herokuapp.com"]
 
 
@@ -46,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-#    'django.middleware.csrf.CsrfViewMiddleware', # CSRFでPOSTが弾かれる対策でコメントアウト
+    #    'django.middleware.csrf.CsrfViewMiddleware', # CSRFでPOSTが弾かれる対策でコメントアウト
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

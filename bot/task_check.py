@@ -1,13 +1,15 @@
 '''タスクの確認に関するクラスなど'''
 
 import fcntl
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, time, timedelta
 from enum import Enum
 
 from linebot.models import TextSendMessage
 
 from . import line
-from .message_commands import add_message_command_group
+from .message_commands import CommandSource, add_message_command_group
+from .message_commands.check_task_commands import \
+    disable_task_check_command_if_need
 from .models import Task, TaskImportance, TaskJoinCheckJob
 from .utilities import TIMEZONE_DEFAULT
 
@@ -51,6 +53,8 @@ class TaskCheckType(Enum):
     TommorowImportantTasksCheck = "TommorowImportantTasksCheck"
     # タスクの事前確認とリマインド
     SoonTasksRemindAndCheck = "SoonTasksRemindAndCheck"
+    # 期限が過ぎたタスクの処理
+    ProcessOverDueTask = "ProcessOverDueTask"
 
 
 class TaskChecker(object):
@@ -62,6 +66,7 @@ class TaskChecker(object):
             TaskCheckType.TommorowTasksRemind: TaskChecker.__execute_tommorow_tasks_remind,
             TaskCheckType.TommorowImportantTasksCheck: TaskChecker.__execute_tommorow_important_tasks_check,
             TaskCheckType.SoonTasksRemindAndCheck: TaskChecker.__execute_soon_tasks_remind_and_check,
+            TaskCheckType.ProcessOverDueTask: TaskChecker.__exectte_process_overdue_task,
         }
 
     def __execute(self, task_check_type, force):
@@ -80,6 +85,7 @@ class TaskChecker(object):
     @classmethod
     def __execute_all(cls, force):
         '''全てのタスクを行う'''
+        cls.__exectte_process_overdue_task(force)
         cls.__execute_tommorow_tasks_remind(force)
         cls.__execute_tommorow_important_tasks_check(force)
         cls.__execute_soon_tasks_remind_and_check(force)
@@ -246,3 +252,16 @@ class TaskChecker(object):
 
             # タスク参加確認を開始
             add_message_command_group(group, "タスク参加確認")
+
+    @staticmethod
+    def __exectte_process_overdue_task(force):
+        '''期限が過ぎたタスクの処理をする'''
+        # 対象タスクの期限が過ぎた確認ジョブを削除する
+        overdue_task_check_jobs = TaskJoinCheckJob.objects.filter(
+            task__deadline__lte=datetime.now(TIMEZONE_DEFAULT))
+        # 削除したタスクのグループのタスク家訓コマンドを無効にする
+        for task_check_job in overdue_task_check_jobs.all():
+            if task_check_job.task.group:
+                disable_task_check_command_if_need(
+                    CommandSource(None, task_check_job.task.group))
+        overdue_task_check_jobs.delete()
