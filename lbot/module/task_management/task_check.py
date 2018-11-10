@@ -6,12 +6,13 @@ from enum import Enum
 
 from linebot.models import TextSendMessage
 
-from . import line
-from .message_commands import CommandSource, add_message_command_group
-from .message_commands.check_task_commands import \
+from bot import line
+from bot.models import Task, TaskImportance, TaskJoinCheckJob
+
+from ...utilities import TIMEZONE_DEFAULT
+from ..message_command import CommandSource, add_message_command_group
+from ..message_command.check_task_commands import \
     disable_task_check_command_if_need
-from .models import Task, TaskImportance, TaskJoinCheckJob
-from .utilities import TIMEZONE_DEFAULT
 
 # 明日のタスクリマインダーの時刻
 TOMORROW_REMIND_TIME = time(hour=23, tzinfo=TIMEZONE_DEFAULT)

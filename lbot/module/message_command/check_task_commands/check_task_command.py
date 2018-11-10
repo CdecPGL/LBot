@@ -2,9 +2,10 @@
 
 import sys
 
-from ...authorities import UserAuthority
-from ...models import TaskJoinCheckJob, User
-from ...utilities import split_command_paramater_strig
+from bot.models import TaskJoinCheckJob, User
+
+from ....authorities import UserAuthority
+from ....utilities import split_command_paramater_strig
 from ..message_command import (CommandSource, MessageCommandGroupBase,
                                remove_message_command_group)
 

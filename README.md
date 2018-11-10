@@ -36,6 +36,53 @@ function HerokuNotifier() {
 }
 ```
 
+## プログラム構成
+
+### LBot Core
+
+Webフレームワークやメッセージサービスに依存しないLBotの中核部分。
+
+#### イベント処理モジュール
+
+フォローや参加などのイベントを処理するモジュール。
+
+#### メッセージ解析モジュール
+
+受け取ったメッセージを解析し、各種コマンドを発行するモジュール。
+
+#### コマンド処理モジュール
+
+受け取ったコマンドから各種操作を実行するモジュール。
+
+#### 会話生成モジュール
+
+会話を生成するモジュール。
+
+#### Mediator
+
+各種サービス間の違いを吸収する仲介クラス。
+
+- SNS Mediator
+- Task Management Service Mediator
+- Database Mediator
+
+### LBot Mediators
+
+各種サービスをLbotが利用できるようにするための実装。
+
+#### SNS Mediators
+
+- LINE Mediator
+- Didcord Mediator
+
+#### Task Management Service Mediators
+
+- Asana Mediator
+
+#### Database Mediators
+
+- Django Database Mediator
+
 ## LICENCE
 
 このリポジトリのソースコードは[MITライセンス](LICENSE)のもと公開しています。

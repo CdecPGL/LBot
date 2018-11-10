@@ -5,11 +5,12 @@ import sys
 import linebot
 from django.db.utils import OperationalError
 
-from . import line_utilities as line_util
+from lbot import utilities as util
+from lbot.exceptions import GroupNotFoundError, UserNotFoundError
+from lbot.module import message_command as mess_cmd
+
 from . import line_settings
-from .. import message_commands as mess_cmd
-from .. import utilities as util
-from ..exceptions import GroupNotFoundError, UserNotFoundError
+from . import line_utilities as line_util
 
 COMMAND_TRIGGER_LIST = ["#", "＃"]
 SENTENCE_MAX_LENGTH = 64

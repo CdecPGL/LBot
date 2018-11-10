@@ -4,13 +4,14 @@ from datetime import datetime, timezone
 
 from dateutil.parser import parse as datetime_parse
 
-from ... import database_utilities as db_util
-from ... import utilities as util
-from ...authorities import UserAuthority
-from ...exceptions import (GroupNotFoundError, TaskNotFoundError,
-                           UserNotFoundError)
-from ...models import Task, TaskImportance, User
-from ...utilities import TIMEZONE_DEFAULT
+from bot.models import Task, TaskImportance, User
+
+from .... import database_utilities as db_util
+from .... import utilities as util
+from ....authorities import UserAuthority
+from ....exceptions import (GroupNotFoundError, TaskNotFoundError,
+                            UserNotFoundError)
+from ....utilities import TIMEZONE_DEFAULT
 from ..check_task_commands import disable_task_check_command_if_need
 from ..message_command import CommandSource
 from .standard_command import StandardMessageCommandGroup
