@@ -7,7 +7,7 @@ from django.db.utils import OperationalError
 
 from lbot import utilities as util
 from lbot.exceptions import GroupNotFoundError, UserNotFoundError
-from lbot.module import message_command as mess_cmd
+from lbot.module.message_analysis import analyse_message_and_execute_command
 
 from . import line_settings
 from . import line_utilities as line_util
@@ -80,25 +80,8 @@ def text_message_handler(event):
             sys.stderr.write('送信元"{}"には対応していません。\n'.format(event.source.type))
             raise Reject("グループラインか個人ラインで話そう、、、")
 
-        # コマンドとパラメータの抽出
-        command = None
-        params = []
-        if command_param:
-            # 左右の空白は取り除く
-            items = [item.strip() for item in command_param.split("\n")]
-            print(items)
-            # 文字列の長さが規定値を超えていたらリジェクト
-            if any([len(item) > SENTENCE_MAX_LENGTH for item in items]):
-                raise Reject("長文は受け付けません(´ε｀ )")
-            # コマンド文字列が空だったらリジェクト
-            if not items or not items[0]:
-                raise Reject("もうちょっと喋って？")
-            command = items[0]
-            if len(items) > 1:
-                params = items[1:]
-
-        # コマンドが指定されてメンテナンス中なら中断
-        if command and util.ENABLE_MAINTENANCE_MODE:
+        # メンテナンス中なら中断
+        if util.ENABLE_MAINTENANCE_MODE:
             raise Reject("メンテナンス中です。。。")
 
         # メッセージ送信グループをデータベースから検索し、なかったら作成
@@ -142,18 +125,16 @@ def text_message_handler(event):
                 raise Reject(
                     "送信ユーザーの情報をLINEから取得できませんでした。\n公式アカウントの利用条件に合意していない場合は合意する必要があります。\nまた、LINEのバージョンは7.5.0以上である必要があります。")
 
-        # コマンドを実行し返信を送信。コマンドがない(自分宛てのメッセージではない)場合は返信しない
-        if command:
-            # コマンド実行
-            command_source = mess_cmd.CommandSource(source_user, source_group)
-            reply = mess_cmd.execute_message_command(
-                command, command_source, params)
-            # グループの時は宛先を表示
-            if source_group:
-                reply = "@{}\n{}".format(source_user.name, reply)
+        # メッセージ解析とコマンド実行、その返信を行う
+        is_success, reply = analyse_message_and_execute_command(
+            command_param, source_user, source_group)
+        if not is_success:
+            raise Reject(reply)
+        if reply:
             line_settings.api.reply_message(
                 event.reply_token,
                 linebot.models.TextSendMessage(text=reply))
+
     except Reject as reject:
         line_settings.api.reply_message(
             event.reply_token,
