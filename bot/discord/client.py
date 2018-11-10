@@ -48,7 +48,7 @@ def run_client(dont_use_default_pool=False):
 
 
 def start_client_in_other_thread():
-    _DISCORD_THREAD = threading.Thread(target=run_client)
+    _DISCORD_THREAD = threading.Thread(target=run_client, args=[True])
     _DISCORD_THREAD.start()
 
 # def stop_client():
