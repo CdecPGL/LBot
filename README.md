@@ -1,6 +1,6 @@
 # LBot
 
-タスク管理などを行うボットです。LINEのメッセージでコマンドを実行します。
+タスク管理などを行うボットです。LINEやDiscordのメッセージでコマンドを実行します。
 
 ## 環境変数
 
@@ -11,9 +11,10 @@ Herokuの場合は以下のコマンドで設定できます。
 heroku config:set ENV_VAR_NAME="value"
 ```
 
-- LBOT_LINE_ACCESS_TOKEN: ラインのアクセストークン。必須。
-- LBOT_LINE_CHANNEL_SECRET: ラインのチャンネルシークレット。必須。
-- LBOT_ENABLE_DEBUG_MODE: デバッグモードを有効にする場合は1を設定する。0に設定されているか定義されていない場合はデバッグモードは無効となる。
+- LBOT_LINE_ACCESS_TOKEN: LINEのアクセストークン。必須。
+- LBOT_LINE_CHANNEL_SECRET: LINEのチャンネルシークレット。必須。
+- LBOT_DISCORD_TOKEN: Discordのトークン。オプション。
+- LBOT_ENABLE_DEBUG_MODE: デバッグモードを有効にする場合は1を設定する。0に設定されているか定義されていない場合はデバッグモードは無効となる。オプション。
 
 ## タイムゾーンについて
 
