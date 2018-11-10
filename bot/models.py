@@ -2,7 +2,7 @@ from enum import Enum
 
 from django.db import models
 
-from bot.authorities import UserAuthority
+from lbot.authorities import UserAuthority
 
 # Create your models here.
 
