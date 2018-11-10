@@ -1,8 +1,9 @@
-import discord
-import re
-import threading
 import asyncio
 import os
+import re
+import threading
+
+import discord
 
 _MENTION_REG = re.compile("<@([0-9]|!)+>")
 _DISCORD_TOKEN_ENVIRONMENT_VAR_NAME = "LBOT_DISCORD_TOKEN"
@@ -33,7 +34,7 @@ class LBotClient(discord.Client):
 
 def run_client(dont_use_default_pool=False):
     try:
-        token = os.environ()[_DISCORD_TOKEN_ENVIRONMENT_VAR_NAME]
+        token = os.environ[_DISCORD_TOKEN_ENVIRONMENT_VAR_NAME]
     except KeyError:
         print(
             f'環境変数"{_DISCORD_TOKEN_ENVIRONMENT_VAR_NAME}"が設定されていないため、Discord関連の機能は無効になります。')
