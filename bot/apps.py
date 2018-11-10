@@ -13,7 +13,7 @@ class BotConfig(AppConfig):
         '''アプリ起動時の処理'''
         super(BotConfig, self).ready()
         # modelsのインポートはdjangoの初期化前に行えないので個々で行う
-        from .task_check import TaskChecker, TaskCheckType
+        from lbot.module.task_management.task_check import TaskChecker, TaskCheckType
 
         def task_check_job():
             '''明日のタスクのリマインドや確認を行うジョブ'''
