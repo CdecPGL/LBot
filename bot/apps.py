@@ -2,8 +2,6 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.apps import AppConfig
 
-from .discord import start_client_in_other_thread
-
 # タスクの確認間隔
 TASK_CHECK_INTERVAL = (0, 10)
 
@@ -16,6 +14,7 @@ class BotConfig(AppConfig):
         super(BotConfig, self).ready()
 
         # Discordの開始
+        from .discord import start_client_in_other_thread
         start_client_in_other_thread()
 
         # modelsのインポートはdjangoの初期化前に行えないのでここで行う
