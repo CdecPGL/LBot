@@ -84,6 +84,20 @@ Webフレームワークやメッセージサービスに依存しないLBotの�
 
 - Django Database Mediator
 
+## Procfileについて
+
+Djangoのauto reload昨日によるAppConfig.readyの二回呼び出し防止で、manager.pyの```--no_reload```オプションを使用するために、Procfileにおいてgunicornを使用した以下の内容ではなく、
+
+```txt
+web: gunicorn luftelli_bot.wsgi --log-file -
+```
+
+以下のように直接実行しています。
+
+```txt
+web: python manage.py runserver 0.0.0.0:$PORT --noreload
+```
+
 ## LICENCE
 
 このリポジトリのソースコードは[MITライセンス](LICENSE)のもと公開しています。

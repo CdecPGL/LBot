@@ -1,4 +1,5 @@
 import asyncio
+import fcntl
 import os
 import re
 import threading
@@ -9,6 +10,7 @@ _MENTION_REG = re.compile("<@([0-9]|!)+>")
 _DISCORD_TOKEN_ENVIRONMENT_VAR_NAME = "LBOT_DISCORD_TOKEN"
 _DISCORD_THREAD = None
 _DISCORD_CLIENT_THREAD_NAME = "discord_client"
+_DISCORD_CLIENT_START_LOCK_FILE = "discord_client_start_lock"
 
 
 class LBotClient(discord.Client):
@@ -55,10 +57,14 @@ def is_discord_client_running():
 
 def start_client_in_other_thread():
     '''別スレッドでDiscordクライアントを開始する。
-    すでに開始されている場合は何もしない。'''
-    if is_discord_client_running():
-        print("すでにDiscordクライアントが実行中のため、新たなクライアントを開始しませんでした。")
-    else:
-        _DISCORD_THREAD = threading.Thread(
-            target=run_client, args=[True], name=_DISCORD_CLIENT_THREAD_NAME)
-        _DISCORD_THREAD.start()
+    同一プロセス内ですでに開始されている場合は何もしない。別プロセスで開始されている場合は新たなクライアントが開始される。'''
+    # Djangoの複数プロセスから同時に呼ばれた場合に同時に実行されるのを防ぐために、ファイルによる排他ロックを行う
+    with open(_DISCORD_CLIENT_START_LOCK_FILE, "w") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        if is_discord_client_running():
+            print("すでにDiscordクライアントが実行中のため、新たなクライアントを開始しませんでした。")
+        else:
+            _DISCORD_THREAD = threading.Thread(
+                target=run_client, args=[True], name=_DISCORD_CLIENT_THREAD_NAME)
+            _DISCORD_THREAD.start()
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)

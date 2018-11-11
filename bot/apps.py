@@ -21,6 +21,7 @@ class BotConfig(AppConfig):
         # modelsのインポートはdjangoの初期化前に行えないのでここで行う
         from lbot.module.task_management.task_check import TaskChecker, TaskCheckType
         # タスク確認の初期化
+
         def task_check_job():
             '''明日のタスクのリマインドや確認を行うジョブ'''
             TaskChecker.execute(TaskCheckType.All)
