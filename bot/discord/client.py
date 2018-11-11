@@ -3,6 +3,7 @@ import fcntl
 import os
 import re
 import threading
+import traceback
 
 import discord
 
@@ -36,40 +37,50 @@ class LBotClient(discord.Client):
 
             # メッセージ送信グループをデータベースから検索し、なかったら作成
             try:
-                source_group = discord_utils.get_group_by_discord_server_id_from_database(
-                    server.id)
-            except GroupNotFoundError:
-                source_group = discord_utils.register_group_by_discord_server(
-                    server)
-            # メッセージ送信者をデータベースから検索し、なかったら作成
-            try:
-                source_user = discord_utils.get_user_by_discord_user_id_from_database(
-                    sender.id)
-                # グループへメンバーが登録されているか確認し必要なら登録
-                if source_group:
-                    if discord_utils.add_member_to_group_if_need(source_user, source_group):
+                try:
+                    source_group = discord_utils.get_group_by_discord_server_id_from_database(
+                        server.id)
+                except GroupNotFoundError:
+                    source_group = discord_utils.register_group_by_discord_server(
+                        server)
+                # メッセージ送信者をデータベースから検索し、なかったら作成
+                try:
+                    source_user = discord_utils.get_user_by_discord_user_id_from_database(
+                        sender.id)
+                    # グループへメンバーが登録されているか確認し必要なら登録
+                    if source_group:
+                        if discord_utils.add_member_to_group_if_need(source_user, source_group):
+                            # メンバーの追加を通知
+                            self.send_message(
+                                channel, f"このグループ「{source_group.name}」にユーザー「{source_user.name}」を追加しました。")
+                except UserNotFoundError:
+                    if source_group:
+                        source_user = discord_utils.register_user_by_discord_user_in_group(
+                            sender, server)
                         # メンバーの追加を通知
                         self.send_message(
                             channel, f"このグループ「{source_group.name}」にユーザー「{source_user.name}」を追加しました。")
-            except UserNotFoundError:
-                if source_group:
-                    source_user = discord_utils.register_user_by_discord_user_in_group(
-                        sender, server)
-                    # メンバーの追加を通知
+                    else:
+                        source_user = discord_utils.register_user_by_discord_user(
+                            sender)
+                        # ユーザーの登録を通知
+                        self.send_message(
+                            channel, f"あなた「{source_user.name}」をユーザー登録しました。")
+                # メッセージ解析とコマンド実行、その返信を行う
+                cleaned_message = self.remove_mentions_from_text(
+                    memssage.content)
+                is_success, reply = analyse_message_and_execute_command(
+                    cleaned_message, source_user, source_group)
+                if reply:
+                    self.send_message(channel, reply)
+            except Exception as e:
+                traceback.print_exc()
+                try:
                     self.send_message(
-                        channel, f"このグループ「{source_group.name}」にユーザー「{source_user.name}」を追加しました。")
-                else:
-                    source_user = discord_utils.register_user_by_discord_user(
-                        sender)
-                    # ユーザーの登録を通知
-                    self.send_message(
-                        channel, f"あなた「{source_user.name}」をユーザー登録しました。")
-            # メッセージ解析とコマンド実行、その返信を行う
-            cleaned_message = self.remove_mentions_from_text(memssage.content)
-            is_success, reply = analyse_message_and_execute_command(
-                cleaned_message, source_user, source_group)
-            if reply:
-                self.send_message(channel, reply)
+                        channel, f"内部で未処理のエラーが発生。詳細はログを見てね☆\n{e.args}")
+                except:
+                    pass
+                raise e
 
     def is_replyable_message(self, message):
         '''返信可能なメッセージかどうか'''

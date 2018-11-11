@@ -11,6 +11,7 @@ from lbot.module.message_analysis import analyse_message_and_execute_command
 
 from . import settings as line_settings
 from . import utilities as line_util
+import traceback
 
 COMMAND_TRIGGER_LIST = ["#", "＃"]
 SENTENCE_MAX_LENGTH = 64
@@ -147,11 +148,12 @@ def text_message_handler(event):
             event.reply_token,
             linebot.models.TextSendMessage(text="内部エラー(データベース操作でエラーが発生)"))
         raise
-    except Exception:
+    except Exception as e:
+        traceback.print_exc()
         try:
             line_settings.api.reply_message(
                 event.reply_token,
-                linebot.models.TextSendMessage(text="なんかこっち側で謎の問題が起こった。"))
+                linebot.models.TextSendMessage(text=f"内部で未処理のエラーが発生。詳細はログを見てね☆\n{e.args}"))
         except Exception:
             pass
-        raise
+        raise e
