@@ -5,14 +5,17 @@ import sys
 
 import linebot
 
-try:
-    ACCESS_TOKEN = os.environ["LBOT_LINE_ACCESS_TOKEN"]
-    CHANNEL_SECRET = os.environ["LBOT_LINE_CHANNEL_SECRET"]
-except KeyError:
-    ACCESS_TOKEN = None
-    CHANNEL_SECRET = None
-    sys.stderr.write(
-        'LINEにアクセスするためには環境変数としてLINE_SCCESS_TOKENとLINE_CHANNEL_SECRETが必要です。')
+api = None
+channel_secret = None
 
 
-api = linebot.LineBotApi(ACCESS_TOKEN)
+def set_up_line():
+    '''LINEのセットアップを行う'''
+    global channel_secret, api
+    try:
+        access_token = os.environ["LBOT_LINE_ACCESS_TOKEN"]
+        channel_secret = os.environ["LBOT_LINE_CHANNEL_SECRET"]
+        api = linebot.LineBotApi(access_token)
+    except KeyError:
+        sys.stderr.write(
+            'LINEにアクセスするためには環境変数としてLINE_SCCESS_TOKENとLINE_CHANNEL_SECRETが必要です。')

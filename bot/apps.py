@@ -17,6 +17,10 @@ class BotConfig(AppConfig):
         from .discord import start_client_in_other_thread
         start_client_in_other_thread()
 
+        # LINEの開始
+        from .line import set_up_line
+        set_up_line()
+
         # modelsのインポートはdjangoの初期化前に行えないのでここで行う
         from lbot.module.task_management.task_check import TaskChecker, TaskCheckType
         # タスク確認の初期化

@@ -16,7 +16,7 @@ import traceback
 COMMAND_TRIGGER_LIST = ["#", "＃"]
 SENTENCE_MAX_LENGTH = 64
 
-event_handler = linebot.WebhookHandler(line_settings.CHANNEL_SECRET)
+event_handler = linebot.WebhookHandler(line_settings.channel_secret)
 
 
 @event_handler.add(linebot.models.FollowEvent)
