@@ -95,7 +95,7 @@ class Group(models.Model):
     line_group = models.OneToOneField(
         LineGroup, on_delete=models.SET_NULL, null=True)
     # Discordサーバー。グループ管理者のみ変更可能
-    discord_group = models.OneToOneField(
+    discord_server = models.OneToOneField(
         DiscordServer, on_delete=models.SET_NULL, null=True)
     # AsanaTeam。グループ管理者のみ変更可能
     asana_team = models.OneToOneField(
