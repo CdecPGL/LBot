@@ -1,4 +1,4 @@
 '''lineパッケージ'''
 
 from .event_handlers import event_handler
-from .settings import set_up_line
+from .client import start_line_client

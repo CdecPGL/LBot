@@ -22,8 +22,8 @@ class BotConfig(AppConfig):
             start_client_in_other_thread()
 
             # LINEの開始
-            from .line import set_up_line
-            set_up_line()
+            from .line import start_line_client
+            start_line_client()
 
             # modelsのインポートはdjangoの初期化前に行えないのでここで行う
             from lbot.module.task_management.task_check import TaskChecker, TaskCheckType
@@ -40,5 +40,5 @@ class BotConfig(AppConfig):
             scheduler = BackgroundScheduler(executors=executors)
             # タスクの定期確認
             scheduler.add_job(task_check_job, "interval",
-                            hours=TASK_CHECK_INTERVAL[0], minutes=TASK_CHECK_INTERVAL[1])
+                              hours=TASK_CHECK_INTERVAL[0], minutes=TASK_CHECK_INTERVAL[1])
             scheduler.start()
