@@ -63,6 +63,8 @@ def check_user_command(command_source: CommandSource, target_user_name: str = No
             user.line_user.name if user.line_user else "なし")
         repply += "■Asanaユーザー\n{}\n".format(
             user.asana_user.name if user.asana_user else "なし")
+        repply += "■Discordユーザー\n{}\n".format(
+            user.discord_user.name if user.discord_user else "なし")
         # 管理グループ
         if user.managing_groups.exists():
             managing_groups_str = "、".join(
