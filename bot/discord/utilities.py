@@ -89,7 +89,7 @@ def register_group_by_discord_server(discord_server: discord.Server)->Group:
     グループ名はグループ数から自動で「グループ**」と付けられる。'''
     # Discordグループをデータベースに登録
     new_discord_server = DiscordServer.objects.create(
-        group_id=discord_server.id)
+        server_id=discord_server.id)
     try:
         # ユーザをデータベースに登録
         total_group_count = Group.objects.count()
@@ -97,7 +97,7 @@ def register_group_by_discord_server(discord_server: discord.Server)->Group:
         while Group.objects.filter(name="グループ{}".format(total_group_count)):
             total_group_count += 1
         new_group = Group.objects.create(name="グループ{}".format(
-            total_group_count), line_group=new_discord_server)
+            total_group_count), discord_server=new_discord_server)
         print(f"グループ(DiscordID: {discord_server.id})をデータベースに登録しました。")
         return new_group
     except Exception:
