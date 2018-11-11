@@ -14,12 +14,12 @@ class BotConfig(AppConfig):
     def ready(self):
         '''アプリ起動時の処理'''
         super(BotConfig, self).ready()
-        # modelsのインポートはdjangoの初期化前に行えないので個々で行う
-        from lbot.module.task_management.task_check import TaskChecker, TaskCheckType
 
         # Discordの開始
         start_client_in_other_thread()
 
+        # modelsのインポートはdjangoの初期化前に行えないのでここで行う
+        from lbot.module.task_management.task_check import TaskChecker, TaskCheckType
         # タスク確認の初期化
         def task_check_job():
             '''明日のタスクのリマインドや確認を行うジョブ'''

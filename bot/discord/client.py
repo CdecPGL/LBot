@@ -8,11 +8,12 @@ import discord
 _MENTION_REG = re.compile("<@([0-9]|!)+>")
 _DISCORD_TOKEN_ENVIRONMENT_VAR_NAME = "LBOT_DISCORD_TOKEN"
 _DISCORD_THREAD = None
+_DISCORD_CLIENT_THREAD_NAME = "discord_client"
 
 
 class LBotClient(discord.Client):
     async def on_ready(self):
-        print('ログインしました')
+        print('Discordにログインしました')
 
     async def on_message(self, message):
         # 送信元が自分でなく、宛先が自分なら返信する
@@ -47,10 +48,17 @@ def run_client(dont_use_default_pool=False):
     client.run(token)
 
 
-def start_client_in_other_thread():
-    _DISCORD_THREAD = threading.Thread(target=run_client, args=[True])
-    _DISCORD_THREAD.start()
+def is_discord_client_running():
+    '''Discordクライアントが実行されているかどうか'''
+    return any([t.is_alive() and t.name == _DISCORD_CLIENT_THREAD_NAME for t in threading.enumerate()])
 
-# def stop_client():
-#     if _DISCORD_THREAD:
-#         _DISCORD_THREAD.join()
+
+def start_client_in_other_thread():
+    '''別スレッドでDiscordクライアントを開始する。
+    すでに開始されている場合は何もしない。'''
+    if is_discord_client_running():
+        print("すでにDiscordクライアントが実行中のため、新たなクライアントを開始しませんでした。")
+    else:
+        _DISCORD_THREAD = threading.Thread(
+            target=run_client, args=[True], name=_DISCORD_CLIENT_THREAD_NAME)
+        _DISCORD_THREAD.start()
