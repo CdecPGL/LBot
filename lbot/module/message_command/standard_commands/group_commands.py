@@ -91,6 +91,19 @@ def change_group_name_command(command_source: CommandSource, new_group_name: str
         return None, ["グループ「{}」の変更権限がない！　グループの変更はMasterユーザーか管理者にしかできないっ！".format(group.name)]
 
 
+# @StandardMessageCommandGroup.add_command("グループ統合", UserAuthority.Master)
+# def integrate_group_command(command_source: CommandSource, target_group_name: str)->(str, [str]):
+#     '''現在いるグループを他のグループに統合します。
+#     Masterユーザーのみ実行可能です。
+#     グループ外での実行はできません。
+#     ■コマンド引数
+#     1: 統合相手のグループ名'''
+#     # グループが送信元か確認
+#     if not command_source.group_data:
+#         return None, ["このコマンドはグループ内でしか使えません。"]
+#     return None, ["未実装"]
+
+
 # グループ設定
 '''グループ設定を変更します。
     Editor権限以上のユーザーでないとグループ管理者にはなれません。

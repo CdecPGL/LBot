@@ -65,14 +65,18 @@ class LBotClient(discord.Client):
                             sender)
                         # ユーザーの登録を通知
                         await self.send_message(
-                            channel, f"あなた「{source_user.name}」をユーザー登録しました。")
+                            channel, f"「{source_user.name}」をユーザー登録しました。")
                 # メッセージ解析とコマンド実行、その返信を行う
                 cleaned_message = self.remove_mentions_from_text(
                     message.content)
-                is_success, reply = analyse_message_and_execute_command(
-                    cleaned_message, source_user, source_group)
+                cleaned_message = cleaned_message.strip()
+                if cleaned_message:
+                    is_success, reply = analyse_message_and_execute_command(
+                        cleaned_message, source_user, source_group)
+                else:
+                    reply = "なんか言って"
                 if reply:
-                    await self.send_message(channel, reply)
+                    await self.send_message(channel, f"{sender.mention}\n{reply}")
             except Exception as e:
                 traceback.print_exc()
                 try:

@@ -124,7 +124,7 @@ def register_event_handlers():
                         # ユーザーの登録を通知
                         line_settings.api.push_message(
                             source_user.line_user.user_id,
-                            linebot.models.TextSendMessage(text="あなた「{}」をユーザー登録しました。".format(source_user.name)))
+                            linebot.models.TextSendMessage(text="「{}」をユーザー登録しました。".format(source_user.name)))
 
                 except linebot.exceptions.LineBotApiError:
                     sys.stderr.write("LINEからユーザーのプロファイルを取得できませんでした。送信元タイプ: {}, LINEグループID: {}, LINEユーザーID: {}\n".format(
@@ -140,12 +140,12 @@ def register_event_handlers():
             if reply:
                 line_settings.api.reply_message(
                     event.reply_token,
-                    linebot.models.TextSendMessage(text=reply))
+                    linebot.models.TextSendMessage(text=f"@{source_user.name}\n{reply}"))
 
         except Reject as reject:
             line_settings.api.reply_message(
                 event.reply_token,
-                linebot.models.TextSendMessage(text=reject.message))
+                linebot.models.TextSendMessage(text=f"@{source_user.name}\n{reject.message}"))
             return
         except OperationalError:
             sys.stderr.write(

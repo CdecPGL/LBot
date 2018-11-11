@@ -31,7 +31,4 @@ def analyse_message_and_execute_command(message_text, source_user, source_group)
         command_source = CommandSource(source_user, source_group)
         reply = execute_message_command(
             command, command_source, params)
-        # グループの時は宛先を表示
-        if source_group:
-            reply = "@{}\n{}".format(source_user.name, reply)
     return True, reply
