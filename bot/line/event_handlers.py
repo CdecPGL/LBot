@@ -153,7 +153,7 @@ def text_message_handler(event):
         try:
             line_settings.api.reply_message(
                 event.reply_token,
-                linebot.models.TextSendMessage(text=f"内部で未処理のエラーが発生。詳細はログを見てね☆\n{e.args}"))
+                linebot.models.TextSendMessage(text=f"内部で未処理のエラーが発生。詳細はログを見てね☆\n{e}"))
         except Exception:
             pass
         raise e

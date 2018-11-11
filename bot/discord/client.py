@@ -68,7 +68,7 @@ class LBotClient(discord.Client):
                             channel, f"あなた「{source_user.name}」をユーザー登録しました。")
                 # メッセージ解析とコマンド実行、その返信を行う
                 cleaned_message = self.remove_mentions_from_text(
-                    memssage.content)
+                    message.content)
                 is_success, reply = analyse_message_and_execute_command(
                     cleaned_message, source_user, source_group)
                 if reply:
@@ -77,7 +77,7 @@ class LBotClient(discord.Client):
                 traceback.print_exc()
                 try:
                     self.send_message(
-                        channel, f"内部で未処理のエラーが発生。詳細はログを見てね☆\n{e.args}")
+                        channel, f"内部で未処理のエラーが発生。詳細はログを見てね☆\n{e}")
                 except:
                     pass
                 raise e
