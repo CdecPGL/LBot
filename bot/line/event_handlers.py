@@ -67,6 +67,7 @@ def register_event_handlers():
 
         try:
             message_text = util.unify_newline_code(event.message.text)
+            print(f"<LINEでメッセージを受信>\n{message_text}")
             # コマンドとパラメータの取得
             command_param = None
             if event.source.type == "user":

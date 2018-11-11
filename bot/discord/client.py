@@ -25,11 +25,11 @@ class LBotClient(discord.Client):
 
     async def on_message(self, message):
         if self.is_replyable_message(message):
-            reply = f"送信者：{message.author}\n"
-            reply += f"サーバー：{message.server}\n"
-            reply += f"チャンネル：{message.channel}\n"
-            reply += f"内容：{self.remove_mentions_from_text(message.content)}\n"
-            await self.send_message(message.channel, reply)
+            log = f"送信者：{message.author}\n"
+            log += f"サーバー：{message.server}\n"
+            log += f"チャンネル：{message.channel}\n"
+            log += f"内容：{self.remove_mentions_from_text(message.content)}\n"
+            print(f"<Discordでメッセージを受信>\n{log}")
 
             sender = message.author
             server = message.server
@@ -51,20 +51,20 @@ class LBotClient(discord.Client):
                     if source_group:
                         if discord_utils.add_member_to_group_if_need(source_user, source_group):
                             # メンバーの追加を通知
-                            self.send_message(
+                            await self.send_message(
                                 channel, f"このグループ「{source_group.name}」にユーザー「{source_user.name}」を追加しました。")
                 except UserNotFoundError:
                     if source_group:
                         source_user = discord_utils.register_user_by_discord_user_in_group(
                             sender, server)
                         # メンバーの追加を通知
-                        self.send_message(
+                        await self.send_message(
                             channel, f"このグループ「{source_group.name}」にユーザー「{source_user.name}」を追加しました。")
                     else:
                         source_user = discord_utils.register_user_by_discord_user(
                             sender)
                         # ユーザーの登録を通知
-                        self.send_message(
+                        await self.send_message(
                             channel, f"あなた「{source_user.name}」をユーザー登録しました。")
                 # メッセージ解析とコマンド実行、その返信を行う
                 cleaned_message = self.remove_mentions_from_text(
@@ -72,11 +72,11 @@ class LBotClient(discord.Client):
                 is_success, reply = analyse_message_and_execute_command(
                     cleaned_message, source_user, source_group)
                 if reply:
-                    self.send_message(channel, reply)
+                    await self.send_message(channel, reply)
             except Exception as e:
                 traceback.print_exc()
                 try:
-                    self.send_message(
+                    await self.send_message(
                         channel, f"内部で未処理のエラーが発生。詳細はログを見てね☆\n{e}")
                 except:
                     pass

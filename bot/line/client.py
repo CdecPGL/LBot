@@ -6,3 +6,4 @@ def start_line_client():
     '''LINEクライアントを開始する。'''
     set_up_line()
     register_event_handlers()
+    print("LINEを開始しました。")

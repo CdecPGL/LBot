@@ -15,7 +15,6 @@ def analyse_message_and_execute_command(message_text, source_user, source_group)
     if message_text:
         # 左右の空白は取り除く
         items = [item.strip() for item in message_text.split("\n")]
-        print(items)
         # 文字列の長さが規定値を超えていたらリジェクト
         if any([len(item) > _SENTENCE_MAX_LENGTH for item in items]):
             return False, "長文は受け付けません(´ε｀ )"
