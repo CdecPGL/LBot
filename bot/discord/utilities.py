@@ -7,6 +7,10 @@ from lbot.exceptions import GroupNotFoundError, UserNotFoundError
 from ..models import DiscordServer, DiscordUser, Group, User
 
 
+def get_discord_fullname(discord_user: discord.User)->str:
+    return f"{discord_user.name}#{discord_user.discriminator}"
+
+
 def get_user_by_discord_user_id_from_database(discord_user_id: str)->User:
     '''DiscordのユーザーIDでデータベースからユーザーを取得する。ない場合は作成する'''
     try:
@@ -27,7 +31,7 @@ def get_group_by_discord_server_id_from_database(discord_server_id: str)->Group:
 
 def register_user_by_discord_user(discord_user: discord.User)->User:
     '''Discordユーザーでユーザーを登録する。戻り値は新しいユーザーデータ'''
-    name = discord_user.name
+    name = get_discord_fullname(discord_user)
     # Discordユーザーをデータベースに登録
     new_discord_user = DiscordUser.objects.create(
         user_id=discord_user.id, name=name)
@@ -56,7 +60,7 @@ def register_user_by_discord_user_in_group(discord_user: discord.User, discord_s
     new_user = None
     new_discord_user = None
     try:
-        name = discord_user.name
+        name = get_discord_fullname(discord_user)
         # Discordユーザーをデータベースに登録
         new_discord_user = DiscordUser.objects.create(
             user_id=discord_user.id, name=name)
@@ -106,7 +110,7 @@ def register_group_by_discord_server(discord_server: discord.Server)->Group:
 
 
 def add_member_to_group_if_need(user: User, group: Group)->bool:
-    '''ユーザーがグループに属している確認して、属していないなら登録する。
+    '''ユーザーがグループに属しているか確認して、属していないなら登録する。
         戻り値は追加されたかどうか。'''
     if not group.members.filter(id=user.id).exists():
         print("ユーザー「{}」をグループ「{}」に登録。".format(user.name, group.name))
