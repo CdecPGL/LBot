@@ -6,6 +6,11 @@ import threading
 
 import discord
 
+from lbot.exceptions import GroupNotFoundError, UserNotFoundError
+from lbot.module.message_analysis import analyse_message_and_execute_command
+
+from . import utilities as discord_utils
+
 _MENTION_REG = re.compile("<@([0-9]|!)+>")
 _DISCORD_TOKEN_ENVIRONMENT_VAR_NAME = "LBOT_DISCORD_TOKEN"
 _DISCORD_THREAD = None
@@ -18,11 +23,66 @@ class LBotClient(discord.Client):
         print('Discordにログインしました')
 
     async def on_message(self, message):
-        # 送信元が自分でなく、宛先が自分なら返信する
-        if self.user != message.author and self.user in message.mentions:
-            print(message.content)
-            reply = f'{message.author.mention}\n未実装……\n受信メッセージ：\n{self.remove_mentions_from_text(message.content)}'
+        if self.is_replyable_message(message):
+            reply = f"送信者：{message.author}\n"
+            reply += f"サーバー：{message.server}\n"
+            reply += f"チャンネル：{message.channel}\n"
+            reply += f"内容：{self.remove_mentions_from_text(message.content)}\n"
             await self.send_message(message.channel, reply)
+
+            sender = message.author
+            server = message.server
+            channel = message.channel
+
+            # メッセージ送信グループをデータベースから検索し、なかったら作成
+            try:
+                source_group = discord_utils.get_group_by_discord_server_id_from_database(
+                    server.id)
+            except GroupNotFoundError:
+                source_group = discord_utils.register_group_by_discord_server(
+                    server)
+            # メッセージ送信者をデータベースから検索し、なかったら作成
+            try:
+                source_user = discord_utils.get_user_by_discord_user_id_from_database(
+                    sender.id)
+                # グループへメンバーが登録されているか確認し必要なら登録
+                if source_group:
+                    if discord_utils.add_member_to_group_if_need(source_user, source_group):
+                        # メンバーの追加を通知
+                        self.send_message(
+                            channel, f"このグループ「{source_group.name}」にユーザー「{source_user.name}」を追加しました。")
+            except UserNotFoundError:
+                if source_group:
+                    source_user = discord_utils.register_user_by_discord_user_in_group(
+                        sender, server)
+                    # メンバーの追加を通知
+                    self.send_message(
+                        channel, f"このグループ「{source_group.name}」にユーザー「{source_user.name}」を追加しました。")
+                else:
+                    source_user = discord_utils.register_user_by_discord_user(
+                        sender)
+                    # ユーザーの登録を通知
+                    self.send_message(
+                        channel, f"あなた「{source_user.name}」をユーザー登録しました。")
+            # メッセージ解析とコマンド実行、その返信を行う
+            cleaned_message = self.remove_mentions_from_text(memssage.content)
+            is_success, reply = analyse_message_and_execute_command(
+                cleaned_message, source_user, source_group)
+            if reply:
+                self.send_message(channel, reply)
+
+    def is_replyable_message(self, message):
+        '''返信可能なメッセージかどうか'''
+        if self.user == message.author:
+            return False
+        elif self.user not in message.mentions:
+            return False
+        elif message.channel.is_private:
+            return False
+        elif message.type != discord.MessageType.default:
+            return False
+        else:
+            return True
 
     @staticmethod
     def remove_mentions_from_text(text):
@@ -33,6 +93,10 @@ class LBotClient(discord.Client):
                 res += line + "\n"
         res.strip("\n")
         return res
+
+    @staticmethod
+    def update_members():
+        pass
 
 
 def run_client(dont_use_default_pool=False):

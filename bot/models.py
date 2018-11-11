@@ -33,6 +33,14 @@ class LineUser(models.Model):
     name = models.CharField(max_length=64, null=True)
 
 
+class DiscordUser(models.Model):
+    '''Discordのユーザーデータベース'''
+    # UserID。Discordから取得
+    user_id = models.CharField(max_length=64, null=True, unique=True)
+    # UserName。Discordから取得
+    name = models.CharField(max_length=64, null=True)
+
+
 class AsanaUser(models.Model):
     '''Asanaのユーザーデータベース'''
     pass
@@ -45,6 +53,9 @@ class User(models.Model):
     # LINEのユーザー情報。そのユーザーのみ設定可能
     line_user = models.OneToOneField(
         LineUser, on_delete=models.SET_NULL, null=True)
+    # Discordのユーザー情報。そのユーザーのみ設定可能
+    discord_user = models.OneToOneField(
+        DiscordUser, on_delete=models.SET_NULL, null=True)
     # Asanaのユーザー情報。そのユーザーのみ設定可能
     asana_user = models.OneToOneField(
         AsanaUser, on_delete=models.SET_NULL, null=True)
@@ -59,6 +70,12 @@ class LineGroup(models.Model):
     '''LINEのグループデータベース'''
     # グループID。LINEから取得
     group_id = models.CharField(max_length=64, null=True, unique=True)
+
+
+class DiscordServer(models.Model):
+    '''Discordのサーバーデータベース'''
+    # サーバーID。Discordから取得
+    server_id = models.CharField(max_length=64, null=True, unique=True)
 
 
 class AsanaTeam(models.Model):
@@ -77,6 +94,9 @@ class Group(models.Model):
     # LINEグループ。グループ管理者のみ変更可能
     line_group = models.OneToOneField(
         LineGroup, on_delete=models.SET_NULL, null=True)
+    # Discordサーバー。グループ管理者のみ変更可能
+    discord_group = models.OneToOneField(
+        DiscordServer, on_delete=models.SET_NULL, null=True)
     # AsanaTeam。グループ管理者のみ変更可能
     asana_team = models.OneToOneField(
         AsanaTeam, on_delete=models.SET_NULL, null=True)

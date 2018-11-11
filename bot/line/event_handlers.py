@@ -9,8 +9,8 @@ from lbot import utilities as util
 from lbot.exceptions import GroupNotFoundError, UserNotFoundError
 from lbot.module.message_analysis import analyse_message_and_execute_command
 
-from . import line_settings
-from . import line_utilities as line_util
+from . import settings as line_settings
+from . import utilities as line_util
 
 COMMAND_TRIGGER_LIST = ["#", "＃"]
 SENTENCE_MAX_LENGTH = 64
