@@ -1,22 +1,11 @@
-from enum import Enum
 
 from django.db import models
 
 from lbot.authorities import UserAuthority
 
+from .utilities import ServiceGroupKind, TaskImportance, get_choices_from_enum
+
 # Create your models here.
-
-
-class TaskImportance(Enum):
-    '''タスクの重要度'''
-    High = "高"
-    Middle = "中"
-    Low = "低"
-
-
-def get_choices_from_enum(source_enum):
-    '''列挙体から選択肢を取得'''
-    return [(item.name, item.name) for item in source_enum]
 
 
 class Vocabulary(models.Model):
@@ -102,6 +91,18 @@ class Group(models.Model):
         AsanaTeam, on_delete=models.SET_NULL, null=True)
     # 有効なメッセージコマンドグループ。カンマ区切りで複数指定
     valid_message_command_groups = models.CharField(max_length=256, default="")
+
+
+class ServiceGroup(models.Model):
+    '''各種サービスのグループ'''
+    # グループの種類
+    kind = models.CharField(
+        max_length=16, choices=get_choices_from_enum(ServiceGroupKind))
+    # サービス内でのID
+    id_in_service = models.CharField(max_length=64)
+    # 所属しているグループ
+    belonging_group = models.ForeignKey(
+        Group, on_delete=models.SET_NULL, related_name="service_groups", null=True)
 
 
 class AsanaTask(models.Model):
