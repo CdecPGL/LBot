@@ -100,6 +100,8 @@ class ServiceGroup(models.Model):
         max_length=16, choices=get_choices_from_enum(ServiceGroupKind))
     # サービス内でのID
     id_in_service = models.CharField(max_length=64)
+    # サービス内での名前
+    name_in_service = models.CharField(max_length=64)
     # 所属しているグループ
     belonging_group = models.ForeignKey(
         Group, on_delete=models.SET_NULL, related_name="service_groups", null=True)
