@@ -26,7 +26,7 @@ class Command(BaseCommand):
                     sys.stderr.write("サービスグループは一つのグループにしか所属できません。\n")
                 else:
                     service_group = ServiceGroup.objects.create(
-                        kind=kind, id_in_service=group.line_group.group_id)
+                        kind=kind, id_in_service=group.line_group.group_id, name_in_service="不明")
                     service_group.belonging_group = group
                     service_group.save()
             if group.discord_server:
@@ -35,6 +35,6 @@ class Command(BaseCommand):
                     sys.stderr.write("サービスグループは一つのグループにしか所属できません。\n")
                 else:
                     service_group = ServiceGroup.objects.create(
-                        kind=kind, id_in_service=group.discord_server.server_id)
+                        kind=kind, id_in_service=group.discord_server.server_id, name_in_service="不明")
                     service_group.belonging_group = group
                     service_group.save()
