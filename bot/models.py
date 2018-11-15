@@ -15,45 +15,16 @@ class Vocabulary(models.Model):
     word = models.CharField(max_length=64, unique=True)
 
 
-class LineUser(models.Model):
-    '''LINEのユーザーデータベース'''
-    # UserID。LINEから取得
-    user_id = models.CharField(max_length=64, null=True, unique=True)
-    # UserName。LINEから取得
-    name = models.CharField(max_length=64, null=True)
-
-
-class DiscordUser(models.Model):
-    '''Discordのユーザーデータベース'''
-    # UserID。Discordから取得
-    user_id = models.CharField(max_length=64, null=True, unique=True)
-    # UserName。Discordから取得
-    name = models.CharField(max_length=64, null=True)
-
-
-class AsanaUser(models.Model):
-    '''Asanaのユーザーデータベース'''
-    pass
-
-
 class User(models.Model):
     '''ユーザーデータベース'''
     # ユーザー名。そのユーザー自身のみ設定可能
     name = models.CharField(max_length=64, unique=True)
-    # LINEのユーザー情報。そのユーザーのみ設定可能
-    line_user = models.OneToOneField(
-        LineUser, on_delete=models.SET_NULL, null=True)
-    # Discordのユーザー情報。そのユーザーのみ設定可能
-    discord_user = models.OneToOneField(
-        DiscordUser, on_delete=models.SET_NULL, null=True)
-    # Asanaのユーザー情報。そのユーザーのみ設定可能
-    asana_user = models.OneToOneField(
-        AsanaUser, on_delete=models.SET_NULL, null=True)
     # 権限。Masterユーザーのみ変更可能
     authority = models.CharField(
         max_length=16, choices=get_choices_from_enum(UserAuthority))
     # 有効なメッセージコマンドグループ。カンマ区切りで複数指定
     valid_message_command_groups = models.CharField(max_length=256, default="")
+
 
 class ServiceUser(models.Model):
     '''各種サービスのサービス'''
@@ -67,6 +38,7 @@ class ServiceUser(models.Model):
     # 所属しているユーザー
     belonging_user = models.ForeignKey(
         User, on_delete=models.SET_NULL, related_name="service_users", null=True)
+
 
 class Group(models.Model):
     '''グループデータベース'''
