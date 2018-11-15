@@ -67,7 +67,7 @@ class TaskChecker(object):
             TaskCheckType.TommorowTasksRemind: TaskChecker.__execute_tommorow_tasks_remind,
             TaskCheckType.TommorowImportantTasksCheck: TaskChecker.__execute_tommorow_important_tasks_check,
             TaskCheckType.SoonTasksRemindAndCheck: TaskChecker.__execute_soon_tasks_remind_and_check,
-            TaskCheckType.ProcessOverDueTask: TaskChecker.__exectte_process_overdue_task,
+            TaskCheckType.ProcessOverDueTask: TaskChecker.__execute_process_overdue_task,
         }
 
     def __execute(self, task_check_type, force):
@@ -86,7 +86,7 @@ class TaskChecker(object):
     @classmethod
     def __execute_all(cls, force):
         '''全てのタスクを行う'''
-        cls.__exectte_process_overdue_task(force)
+        cls.__execute_process_overdue_task(force)
         cls.__execute_tommorow_tasks_remind(force)
         cls.__execute_tommorow_important_tasks_check(force)
         cls.__execute_soon_tasks_remind_and_check(force)
@@ -158,28 +158,29 @@ class TaskChecker(object):
         group_task_map = {}
         for task in target_task_set:
             group = task.group
-            if group.line_group.group_id in group_task_map:
-                group_task_map[group.line_group.group_id].append(task)
+            if group in group_task_map:
+                group_task_map[group].append(task)
             else:
-                group_task_map[group.line_group.group_id] = [task]
+                group_task_map[group] = [task]
 
-        for line_group_id, task_list in group_task_map.items():
-            # 開始メッセージを送信
-            line.api.push_message(
-                line_group_id, TextSendMessage(text=start_messege))
-            # タスク確認を送信
-            mess = ""
-            for task in task_list:
-                mess += "■{}(期限: {})\n".format(task.name,
-                                               convert_deadline_to_string(task.deadline))
-                mess += "メンバー：{}\n".format(
-                    "、".join([member.name for member in task.participants.all()]))
-            mess = mess.rstrip("\n")
-            line.api.push_message(
-                line_group_id, TextSendMessage(text=mess))
-            # 終了メッセージを送信
-            line.api.push_message(
-                line_group_id, TextSendMessage(text=end_message))
+        for group, task_list in group_task_map.items():
+            print("タスクリマインドメッセージは現在無効です。")
+            # # 開始メッセージを送信
+            # line.api.push_message(
+            #     line_group_id, TextSendMessage(text=start_messege))
+            # # タスク確認を送信
+            # mess = ""
+            # for task in task_list:
+            #     mess += "■{}(期限: {})\n".format(task.name,
+            #                                    convert_deadline_to_string(task.deadline))
+            #     mess += "メンバー：{}\n".format(
+            #         "、".join([member.name for member in task.participants.all()]))
+            # mess = mess.rstrip("\n")
+            # line.api.push_message(
+            #     line_group_id, TextSendMessage(text=mess))
+            # # 終了メッセージを送信
+            # line.api.push_message(
+            #     line_group_id, TextSendMessage(text=end_message))
 
     @staticmethod
     def __check_tasks(target_task_set, start_messege_single, start_messege_alone_multi):
@@ -188,74 +189,75 @@ class TaskChecker(object):
         group_task_map = {}
         for task in target_task_set:
             group = task.group
-            if group.line_group.group_id in group_task_map:
-                group_task_map[group.line_group.group_id].append(task)
+            if group in group_task_map:
+                group_task_map[group].append(task)
             else:
-                group_task_map[group.line_group.group_id] = [task]
+                group_task_map[group] = [task]
 
         # グループごとに通知
         for line_group_id, task_list in group_task_map.items():
-            group = line.utilities.get_group_by_line_group_id_from_database(
-                line_group_id)
-            # 確認タスクを追加
-            check_number_count = 1
-            important_task_check_job_list = []
-            for task in task_list:
-                try:
-                    task_check_job = TaskJoinCheckJob.objects.get(task=task)
-                except TaskJoinCheckJob.DoesNotExist:
-                    # 空いている確認番号を探す
-                    while TaskJoinCheckJob.objects.filter(check_number=check_number_count).exists():
-                        check_number_count += 1
-                    # タスク確認の登録(テストで期限を12時間後にする)
-                    task_check_job = TaskJoinCheckJob.objects.create(
-                        group=task.group, task=task, check_number=check_number_count, deadline=datetime.now() + timedelta(hours=12))
-                important_task_check_job_list.append(task_check_job)
-            # 確認番号で並び替え
-            ordered_task_check_job_list = [task_check_job for task_check_job in sorted(
-                important_task_check_job_list, key=lambda task_check_job: task_check_job.check_number)]
+            print("タスク確認メッセージは現在無効です。")
+            # group = line.utilities.get_group_by_line_group_id_from_database(
+            #     line_group_id)
+            # # 確認タスクを追加
+            # check_number_count = 1
+            # important_task_check_job_list = []
+            # for task in task_list:
+            #     try:
+            #         task_check_job = TaskJoinCheckJob.objects.get(task=task)
+            #     except TaskJoinCheckJob.DoesNotExist:
+            #         # 空いている確認番号を探す
+            #         while TaskJoinCheckJob.objects.filter(check_number=check_number_count).exists():
+            #             check_number_count += 1
+            #         # タスク確認の登録(テストで期限を12時間後にする)
+            #         task_check_job = TaskJoinCheckJob.objects.create(
+            #             group=task.group, task=task, check_number=check_number_count, deadline=datetime.now() + timedelta(hours=12))
+            #     important_task_check_job_list.append(task_check_job)
+            # # 確認番号で並び替え
+            # ordered_task_check_job_list = [task_check_job for task_check_job in sorted(
+            #     important_task_check_job_list, key=lambda task_check_job: task_check_job.check_number)]
 
-            # 通知
-            if len(ordered_task_check_job_list) == 1:
-                task_check_job = ordered_task_check_job_list[0]
-                task = task_check_job.task
-                mess = start_messege_single.format(
-                    task.name, convert_deadline_to_string(task.deadline))
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
-                mess = "メンバーの{}はこのタスクに参加できる？".format(
-                    "".join(["「{}」".format(member.name) for member in task.participants.all()]))
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
-                mess = "参加できるなら「#できる」、できないなら「#できない」と答えてね。"
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
-            else:
-                mess = start_messege_alone_multi
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
-                # タスク一覧を作成
-                mess = ""
-                for task_check_job in ordered_task_check_job_list:
-                    mess += "{}. {}(期限: {})\n".format(task_check_job.check_number, task_check_job.task.name,
-                                                      convert_deadline_to_string(task_check_job.task.deadline))
-                    mess += "メンバー：{}\n".format(
-                        "、".join([member.name for member in task_check_job.task.participants.all()]))
-                mess = mess.rstrip("\n")
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
-                mess = "これらのタスクに参加できるかできないか答えてね。"
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
-                mess = "例えば、1番のタスクに参加できて2番はできない場合は\n======\n#できる\n1\n======\n#できない\n2\n======\nのように答えてね。"
-                line.api.push_message(
-                    line_group_id, TextSendMessage(text=mess))
+            # # 通知
+            # if len(ordered_task_check_job_list) == 1:
+            #     task_check_job = ordered_task_check_job_list[0]
+            #     task = task_check_job.task
+            #     mess = start_messege_single.format(
+            #         task.name, convert_deadline_to_string(task.deadline))
+            #     line.api.push_message(
+            #         line_group_id, TextSendMessage(text=mess))
+            #     mess = "メンバーの{}はこのタスクに参加できる？".format(
+            #         "".join(["「{}」".format(member.name) for member in task.participants.all()]))
+            #     line.api.push_message(
+            #         line_group_id, TextSendMessage(text=mess))
+            #     mess = "参加できるなら「#できる」、できないなら「#できない」と答えてね。"
+            #     line.api.push_message(
+            #         line_group_id, TextSendMessage(text=mess))
+            # else:
+            #     mess = start_messege_alone_multi
+            #     line.api.push_message(
+            #         line_group_id, TextSendMessage(text=mess))
+            #     # タスク一覧を作成
+            #     mess = ""
+            #     for task_check_job in ordered_task_check_job_list:
+            #         mess += "{}. {}(期限: {})\n".format(task_check_job.check_number, task_check_job.task.name,
+            #                                           convert_deadline_to_string(task_check_job.task.deadline))
+            #         mess += "メンバー：{}\n".format(
+            #             "、".join([member.name for member in task_check_job.task.participants.all()]))
+            #     mess = mess.rstrip("\n")
+            #     line.api.push_message(
+            #         line_group_id, TextSendMessage(text=mess))
+            #     mess = "これらのタスクに参加できるかできないか答えてね。"
+            #     line.api.push_message(
+            #         line_group_id, TextSendMessage(text=mess))
+            #     mess = "例えば、1番のタスクに参加できて2番はできない場合は\n======\n#できる\n1\n======\n#できない\n2\n======\nのように答えてね。"
+            #     line.api.push_message(
+            #         line_group_id, TextSendMessage(text=mess))
 
             # タスク参加確認を開始
             add_message_command_group(group, "タスク参加確認")
 
     @staticmethod
-    def __exectte_process_overdue_task(force):
+    def __execute_process_overdue_task(force):
         '''期限が過ぎたタスクの処理をする'''
         # 対象タスクの期限が過ぎた確認ジョブを削除する
         overdue_task_check_jobs = TaskJoinCheckJob.objects.filter(

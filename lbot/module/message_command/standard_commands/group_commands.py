@@ -54,6 +54,9 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
                 "あり" if group.asana_team else "なし")
             repply += "■Discordサーバー\n{}\n".format(
                 "あり" if group.discord_server else "なし")
+            repply += "■各種サービスのグループ：\n"
+            for service_group in group.service_groups.all():
+                reply += f"{service_group.name_in_service}({service_group.kind})\n"
             if group.members.exists():
                 members_str = "、".join(
                     [member.name for member in group.members.all()])

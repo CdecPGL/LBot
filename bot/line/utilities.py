@@ -1,9 +1,11 @@
 '''LINE関連のUtility関数群'''
 
+from bot.utilities import ServiceGroupKind
 from lbot.authorities import UserAuthority
-from lbot.exceptions import GroupNotFoundError, UserNotFoundError
+from lbot.exceptions import (GroupAlreadyExistError, GroupNotFoundError,
+                             UserNotFoundError)
 
-from ..models import Group, LineGroup, LineUser, User
+from ..models import Group, LineUser, ServiceGroup, User
 from .settings import api as line_api
 
 
@@ -19,7 +21,7 @@ def get_user_by_line_user_id_from_database(line_user_id: str)->User:
 def get_group_by_line_group_id_from_database(line_group_id: str)->Group:
     '''LINEのグループIDでデータベースからグループを取得する'''
     try:
-        return Group.objects.get(line_group__group_id__exact=line_group_id)
+        return Group.objects.get(service_groups__id_in_service__exact=line_group_id)
     except Group.DoesNotExist:
         raise GroupNotFoundError(
             "グループ(LineGroupID: {})が見つかりませんでした。".format(line_group_id))
@@ -88,7 +90,12 @@ def register_group_by_line_group_id(line_group_id: str)->Group:
     '''LINEユーザーIDでグループを登録する。戻り値は新しいグループデータ。
     グループ名はグループ数から自動で「グループ**」と付けられる。'''
     # LINEグループをデータベースに登録
-    new_line_group = LineGroup.objects.create(group_id=line_group_id)
+    if ServiceGroupKind.objects.filter(kind=ServiceGroupKind.LINEGroup.name, id_in_service=line_group_id).exists():
+        raise GroupAlreadyExistError(
+            f"グループ(LINEGroupID: {discord_server.id})はすでにデータベースに登録されています。")
+    else:
+        new_service_group = ServiceGroupKind.objects.create(
+            kind=ServiceGroupKind.LINEGroup.name, id_in_service=line_group_id, name_in_service="不明")
     try:
         # ユーザをデータベースに登録
         total_group_count = Group.objects.count()
@@ -96,11 +103,11 @@ def register_group_by_line_group_id(line_group_id: str)->Group:
         while Group.objects.filter(name="グループ{}".format(total_group_count)):
             total_group_count += 1
         new_group = Group.objects.create(name="グループ{}".format(
-            total_group_count), line_group=new_line_group)
+            total_group_count), line_group=new_service_group)
         print("グループ(LineID: {})をデータベースに登録しました。".format(line_group_id))
         return new_group
     except Exception:
-        new_line_group.delete()
+        new_service_group.delete()
         raise
 
 
