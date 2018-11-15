@@ -3,7 +3,8 @@ from django.db import models
 
 from lbot.authorities import UserAuthority
 
-from .utilities import ServiceGroupKind, TaskImportance, get_choices_from_enum
+from .utilities import (ServiceGroupKind, ServiceUserKind, TaskImportance,
+                        get_choices_from_enum)
 
 # Create your models here.
 
@@ -54,6 +55,18 @@ class User(models.Model):
     # 有効なメッセージコマンドグループ。カンマ区切りで複数指定
     valid_message_command_groups = models.CharField(max_length=256, default="")
 
+class ServiceUser(models.Model):
+    '''各種サービスのサービス'''
+    # ユーザーの種類
+    kind = models.CharField(
+        max_length=16, choices=get_choices_from_enum(ServiceUserKind))
+    # サービス内でのID
+    id_in_service = models.CharField(max_length=64)
+    # サービス内での名前
+    name_in_service = models.CharField(max_length=64)
+    # 所属しているユーザー
+    belonging_user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, related_name="service_users", null=True)
 
 class Group(models.Model):
     '''グループデータベース'''

@@ -15,6 +15,12 @@ class ServiceGroupKind(Enum):
     DiscordChannel = "DiscordChannel"
     AsanaTeam = "AsanaTeam"
 
+class ServiceUserKind(Enum):
+    '''サービスユーザーの種類'''
+    LINEUser = "LINEUser"
+    DiscordUser = "DiscordUser"
+    AsanaUser = "AsanaUser"
+
 
 def get_choices_from_enum(source_enum):
     '''列挙体から選択肢を取得'''
