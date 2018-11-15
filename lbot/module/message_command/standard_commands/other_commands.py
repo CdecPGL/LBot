@@ -14,6 +14,8 @@ def test_command(command_source: CommandSource, *params)->(str, [str]):
     reply = '<送信者>\n'
     reply += f'UserID: {command_source.user_data.id}\n'
     reply += f'UserName: {command_source.user_data.name}\n'
+    for service_user in command_source.user_data.service_users.all():
+        reply += f'ServiceUser: {service_user.name_in_service}({service_user.id_in_service}@{service_user.kind})\n'
     reply += '<送信元グループ>\n'
     if command_source.group_data:
         reply += f'GroupID: {command_source.group_data.id}\n'
