@@ -12,18 +12,16 @@ from .standard_command import StandardMessageCommandGroup
 def test_command(command_source: CommandSource, *params)->(str, [str]):
     '''テストコマンド'''
     reply = '<送信者>\n'
-    reply += 'LineUserID: {}\n'.format(
-        command_source.user_data.line_user.user_id)
-    reply += 'Name: {}\n'.format(command_source.user_data.name)
+    reply += f'UserID: {command_source.user_data.id}\n'
+    reply += f'UserName: {command_source.user_data.name}\n'
     reply += '<送信元グループ>\n'
     if command_source.group_data:
-        line_group_id = command_source.group_data.line_group.group_id
-        group_name = command_source.group_data.name if command_source.group_data.name else '未設定'
+        reply += f'GroupID: {command_source.group_data.id}\n'
+        reply += f'GroupName: {command_source.group_data.name}\n'
+        for service_group in command_source.group_data.service_groups.all():
+            reply += f'ServiceGroup: {service_group.name_in_service}({service_group.id_in_service})@{service_group.kind}\n'
     else:
-        line_group_id = "なし"
-        group_name = "なし"
-    reply += 'LineGroupID: {}\n'.format(line_group_id)
-    reply += 'Name: {}\n'.format(group_name)
+        reply += "なし"
     reply += '<コマンド引数>\n'
     reply += "\n".join(["{}: {}".format(idx + 1, param)
                         for idx, param in enumerate(params)])
