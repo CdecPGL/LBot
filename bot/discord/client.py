@@ -12,7 +12,8 @@ from lbot.module.message_analysis import analyse_message_and_execute_command
 
 from . import utilities as discord_utils
 
-_MENTION_REG = re.compile("<@([0-9]|!)+>")
+_MENTION_REG_EXP = r"<@([0-9]|!)+>"
+_MENTION_REG = re.compile(_MENTION_REG_EXP)
 _DISCORD_TOKEN_ENVIRONMENT_VAR_NAME = "LBOT_DISCORD_TOKEN"
 _DISCORD_THREAD = None
 _DISCORD_CLIENT_THREAD_NAME = "discord_client"
@@ -104,9 +105,10 @@ class LBotClient(discord.Client):
         '''テキストからメンション指定を取り除く'''
         res = ""
         for line in text.split("\n"):
-            if not _MENTION_REG.match(line):
+            line = re.sub(_MENTION_REG_EXP, "", line).strip()
+            if line:
                 res += line + "\n"
-        res.strip("\n")
+        res.strip()
         return res
 
     @staticmethod

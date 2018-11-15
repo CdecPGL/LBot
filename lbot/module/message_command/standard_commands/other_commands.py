@@ -21,7 +21,7 @@ def test_command(command_source: CommandSource, *params)->(str, [str]):
         for service_group in command_source.group_data.service_groups.all():
             reply += f'ServiceGroup: {service_group.name_in_service}({service_group.id_in_service}@{service_group.kind})\n'
     else:
-        reply += "なし"
+        reply += "なし\n"
     reply += '<コマンド引数>\n'
     reply += "\n".join(["{}: {}".format(idx + 1, param)
                         for idx, param in enumerate(params)])
