@@ -30,6 +30,7 @@ class LBotClient(discord.Client):
             log += f"サーバー：{message.server}\n"
             log += f"チャンネル：{message.channel}\n"
             log += f"内容：{self.remove_mentions_from_text(message.content)}\n"
+            log = log.strip()
             print(f"<Discordでメッセージを受信>\n{log}")
 
             sender = message.author
