@@ -108,7 +108,9 @@ def register_group_by_discord_server(discord_server: discord.Server)->Group:
         while Group.objects.filter(name=f"{name_base}{total_group_count}"):
             total_group_count += 1
         new_group = Group.objects.create(
-            name=f"{name_base}{total_group_count}", discord_server=new_service_group)
+            name=f"{name_base}{total_group_count}")
+        new_service_group.belonging_group = new_group
+        new_service_group.save()
         print(f"グループ(DiscordID: {discord_server.id})をデータベースに登録しました。")
         return new_group
     except Exception:

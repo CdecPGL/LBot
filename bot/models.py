@@ -55,23 +55,6 @@ class User(models.Model):
     valid_message_command_groups = models.CharField(max_length=256, default="")
 
 
-class LineGroup(models.Model):
-    '''LINEのグループデータベース'''
-    # グループID。LINEから取得
-    group_id = models.CharField(max_length=64, null=True, unique=True)
-
-
-class DiscordServer(models.Model):
-    '''Discordのサーバーデータベース'''
-    # サーバーID。Discordから取得
-    server_id = models.CharField(max_length=64, null=True, unique=True)
-
-
-class AsanaTeam(models.Model):
-    '''Asanaのチームデータベース'''
-    pass
-
-
 class Group(models.Model):
     '''グループデータベース'''
     # グループ名。グループ管理者のみ変更可能
@@ -80,15 +63,6 @@ class Group(models.Model):
     managers = models.ManyToManyField(User, related_name="managing_groups")
     # メンバー。グループ管理者のみ変更可能
     members = models.ManyToManyField(User, related_name="belonging_groups")
-    # LINEグループ。グループ管理者のみ変更可能
-    line_group = models.OneToOneField(
-        LineGroup, on_delete=models.SET_NULL, null=True)
-    # Discordサーバー。グループ管理者のみ変更可能
-    discord_server = models.OneToOneField(
-        DiscordServer, on_delete=models.SET_NULL, null=True)
-    # AsanaTeam。グループ管理者のみ変更可能
-    asana_team = models.OneToOneField(
-        AsanaTeam, on_delete=models.SET_NULL, null=True)
     # 有効なメッセージコマンドグループ。カンマ区切りで複数指定
     valid_message_command_groups = models.CharField(max_length=256, default="")
 

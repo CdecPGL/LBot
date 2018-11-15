@@ -103,7 +103,9 @@ def register_group_by_line_group_id(line_group_id: str)->Group:
         while Group.objects.filter(name="グループ{}".format(total_group_count)):
             total_group_count += 1
         new_group = Group.objects.create(name="グループ{}".format(
-            total_group_count), line_group=new_service_group)
+            total_group_count))
+        new_service_group.belonging_group = new_group
+        new_service_group.save()
         print("グループ(LineID: {})をデータベースに登録しました。".format(line_group_id))
         return new_group
     except Exception:

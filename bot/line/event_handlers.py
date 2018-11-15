@@ -107,7 +107,7 @@ def register_event_handlers():
                     if line_util.add_member_to_group_if_need(source_user, source_group):
                         # メンバーの追加を通知
                         line_settings.api.push_message(
-                            source_group.line_group.group_id,
+                            event.source.group_id,
                             linebot.models.TextSendMessage(text="このグループ「{}」にユーザー「{}」を追加しました。".format(source_group.name, source_user.name)))
             except UserNotFoundError:
                 try:
@@ -116,7 +116,7 @@ def register_event_handlers():
                             event.source.user_id, event.source.group_id)
                         # メンバーの追加を通知
                         line_settings.api.push_message(
-                            source_group.line_group.group_id,
+                            event.source.group_id,
                             linebot.models.TextSendMessage(text="このグループ「{}」にユーザー「{}」を追加しました。".format(source_group.name, source_user.name)))
                     else:
                         source_user = line_util.register_user_by_line_user_id(
