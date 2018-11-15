@@ -48,13 +48,7 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
         if check_group_watch_authority(command_source.user_data, group):
             reply = "<グループ情報>\n"
             reply += "■グループ名\n{}\n".format(group.name)
-            reply += "■LINEグループ\n{}\n".format(
-                "あり" if group.line_group else "なし")
-            reply += "■Asanaチーム\n{}\n".format(
-                "あり" if group.asana_team else "なし")
-            reply += "■Discordサーバー\n{}\n".format(
-                "あり" if group.discord_server else "なし")
-            reply += "■各種サービスのグループ：\n"
+            reply += "■各種サービスのグループ\n"
             for service_group in group.service_groups.all():
                 reply += f"{service_group.name_in_service}@{service_group.kind}\n"
             if group.members.exists():
