@@ -123,7 +123,7 @@ def register_event_handlers():
                             event.source.user_id)
                         # ユーザーの登録を通知
                         line_settings.api.push_message(
-                            source_user.line_user.user_id,
+                            event.source.user_id,
                             linebot.models.TextSendMessage(text="「{}」をユーザー登録しました。".format(source_user.name)))
 
                 except linebot.exceptions.LineBotApiError:

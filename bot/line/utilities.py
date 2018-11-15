@@ -1,18 +1,18 @@
 '''LINE関連のUtility関数群'''
 
-from bot.utilities import ServiceGroupKind
+from bot.utilities import ServiceGroupKind, ServiceUserKind
 from lbot.authorities import UserAuthority
 from lbot.exceptions import (GroupAlreadyExistError, GroupNotFoundError,
                              UserNotFoundError)
 
-from ..models import Group, LineUser, ServiceGroup, User
+from ..models import Group, ServiceGroup, ServiceUser, User
 from .settings import api as line_api
 
 
 def get_user_by_line_user_id_from_database(line_user_id: str)->User:
     '''LINEのユーザーIDでデータベースからユーザーを取得する。ない場合は作成する'''
     try:
-        return User.objects.get(line_user__user_id__exact=line_user_id)
+        return User.objects.get(service_users__id_in_service__exact=line_user_id)
     except User.DoesNotExist:
         raise UserNotFoundError(
             "ユーザー(LineUserID: {})が見つかりませんでした。".format(line_user_id))
@@ -32,7 +32,8 @@ def register_user_by_line_user_id(line_user_id: str)->User:
     user_profile = line_api.get_profile(line_user_id)
     name = user_profile.display_name
     # LINEユーザーをデータベースに登録
-    new_line_user = LineUser.objects.create(user_id=line_user_id, name=name)
+    new_service_user = ServiceUser.objects.create(
+        id_in_service=line_user_id, name_in_service=name)
     try:
         # ユーザをデータベースに登録
         counter = 1
@@ -41,12 +42,14 @@ def register_user_by_line_user_id(line_user_id: str)->User:
         while User.objects.filter(name=name_candidate).exists():
             name_candidate = name + str(counter)
             counter += 1
-        new_user = User.objects.create(name=name_candidate, line_user=new_line_user,
-                                       authority=UserAuthority.Watcher.name)
+        new_user = User.objects.create(
+            name=name_candidate, authority=UserAuthority.Watcher.name)
+        new_service_user.belonging_user = new_user
+        new_service_user.save()
         print("ユーザー(LineID: {}, Name: {})をデータベースに登録しました。".format(line_user_id, name))
         return new_user
     except Exception:
-        new_line_user.delete()
+        new_service_user.delete()
         raise
 
 
@@ -55,14 +58,14 @@ def register_user_by_line_user_id_in_group(line_user_id: str, line_group_id: str
     LINEIDに紐付いたグループが作成されている必要があり、紐付いているグループにもユーザーが登録される。
     戻り値は新しいユーザーデータ。'''
     new_user = None
-    new_line_user = None
+    new_service_user = None
     try:
         user_profile = line_api.get_group_member_profile(
             line_group_id, line_user_id)
         name = user_profile.display_name
         # LINEユーザーをデータベースに登録
-        new_line_user = LineUser.objects.create(
-            user_id=line_user_id, name=name)
+        new_service_user = ServiceUser.objects.create(
+            id_in_service=line_user_id, name_in_service=name)
         # ユーザをデータベースに登録
         counter = 1
         name_candidate = name
@@ -70,8 +73,10 @@ def register_user_by_line_user_id_in_group(line_user_id: str, line_group_id: str
         while User.objects.filter(name=name_candidate).exists():
             name_candidate = name + str(counter)
             counter += 1
-        new_user = User.objects.create(name=name_candidate, line_user=new_line_user,
-                                       authority=UserAuthority.Watcher.name)
+        new_user = User.objects.create(
+            name=name_candidate, authority=UserAuthority.Watcher.name)
+        new_service_user.belonging_user = new_user
+        new_service_user.save()
         # グループにユーザーを登録
         group = get_group_by_line_group_id_from_database(line_group_id)
         group.members.add(new_user)
@@ -79,8 +84,8 @@ def register_user_by_line_user_id_in_group(line_user_id: str, line_group_id: str
         print("ユーザー(LineID: {}, Name: {})をデータベースに登録しました。".format(line_user_id, name))
         return new_user
     except Exception:
-        if new_line_user:
-            new_line_user.delete()
+        if new_service_user:
+            new_service_user.delete()
         if new_user:
             new_user.delete()
         raise

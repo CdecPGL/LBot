@@ -1,12 +1,12 @@
 
 import discord
 
-from bot.utilities import ServiceGroupKind
+from bot.utilities import ServiceGroupKind, ServiceUserKind
 from lbot.authorities import UserAuthority
 from lbot.exceptions import (GroupAlreadyExistError, GroupNotFoundError,
                              UserNotFoundError)
 
-from ..models import DiscordUser, Group, ServiceGroup, User
+from ..models import Group, ServiceGroup, ServiceUser, User
 
 
 def get_discord_fullname(discord_user: discord.User)->str:
@@ -16,7 +16,7 @@ def get_discord_fullname(discord_user: discord.User)->str:
 def get_user_by_discord_user_id_from_database(discord_user_id: str)->User:
     '''DiscordのユーザーIDでデータベースからユーザーを取得する。ない場合は作成する'''
     try:
-        return User.objects.get(discord_user__user_id__exact=discord_user_id)
+        return User.objects.get(service_users__id_in_service__exact=discord_user_id)
     except User.DoesNotExist:
         raise UserNotFoundError(
             f"ユーザー(DiscordUserID: {discord_user_id})が見つかりませんでした。")
@@ -35,8 +35,8 @@ def register_user_by_discord_user(discord_user: discord.User)->User:
     '''Discordユーザーでユーザーを登録する。戻り値は新しいユーザーデータ'''
     name = get_discord_fullname(discord_user)
     # Discordユーザーをデータベースに登録
-    new_discord_user = DiscordUser.objects.create(
-        user_id=discord_user.id, name=name)
+    new_service_user = ServiceUser.objects.create(
+        id_in_service=discord_user.id, name_in_service=name)
     try:
         # ユーザをデータベースに登録
         counter = 1
@@ -45,13 +45,15 @@ def register_user_by_discord_user(discord_user: discord.User)->User:
         while User.objects.filter(name=name_candidate).exists():
             name_candidate = name + str(counter)
             counter += 1
-        new_user = User.objects.create(name=name_candidate, discord_user=new_discord_user,
-                                       authority=UserAuthority.Watcher.name)
+        new_user = User.objects.create(
+            name=name_candidate, authority=UserAuthority.Watcher.name)
+        new_service_user.belonging_user = new_user
+        new_service_user.save()
         print(
             f"ユーザー(DiscordID: {discord_user.id}, Name: {name})をデータベースに登録しました。")
         return new_user
     except Exception:
-        new_discord_user.delete()
+        new_service_user.delete()
         raise
 
 
@@ -60,12 +62,12 @@ def register_user_by_discord_user_in_group(discord_user: discord.User, discord_s
     Discordサーバーに紐付いたグループが作成されている必要があり、紐付いているグループにもユーザーが登録される。
     戻り値は新しいユーザーデータ。'''
     new_user = None
-    new_discord_user = None
+    new_service_user = None
     try:
         name = get_discord_fullname(discord_user)
         # Discordユーザーをデータベースに登録
-        new_discord_user = DiscordUser.objects.create(
-            user_id=discord_user.id, name=name)
+        new_service_user = ServiceUser.objects.create(
+            id_in_service=discord_user.id, name_in_service=name)
         # ユーザをデータベースに登録
         counter = 1
         name_candidate = name
@@ -73,8 +75,10 @@ def register_user_by_discord_user_in_group(discord_user: discord.User, discord_s
         while User.objects.filter(name=name_candidate).exists():
             name_candidate = name + str(counter)
             counter += 1
-        new_user = User.objects.create(name=name_candidate, discord_user=new_discord_user,
-                                       authority=UserAuthority.Watcher.name)
+        new_user = User.objects.create(
+            name=name_candidate, authority=UserAuthority.Watcher.name)
+        new_service_user.belonging_user = new_user
+        new_service_user.save()
         # グループにユーザーを登録
         group = get_group_by_discord_server_id_from_database(discord_server.id)
         group.members.add(new_user)
@@ -83,8 +87,8 @@ def register_user_by_discord_user_in_group(discord_user: discord.User, discord_s
             f"ユーザー(DiscordID: {discord_user.id}, Name: {discord_user.name})をデータベースに登録しました。")
         return new_user
     except Exception:
-        if new_discord_user:
-            new_discord_user.delete()
+        if new_service_user:
+            new_service_user.delete()
         if new_user:
             new_user.delete()
         raise
