@@ -46,15 +46,15 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
                 return "個人のトークルーム。", []
 
         if check_group_watch_authority(command_source.user_data, group):
-            repply = "<グループ情報>\n"
-            repply += "■グループ名\n{}\n".format(group.name)
-            repply += "■LINEグループ\n{}\n".format(
+            reply = "<グループ情報>\n"
+            reply += "■グループ名\n{}\n".format(group.name)
+            reply += "■LINEグループ\n{}\n".format(
                 "あり" if group.line_group else "なし")
-            repply += "■Asanaチーム\n{}\n".format(
+            reply += "■Asanaチーム\n{}\n".format(
                 "あり" if group.asana_team else "なし")
-            repply += "■Discordサーバー\n{}\n".format(
+            reply += "■Discordサーバー\n{}\n".format(
                 "あり" if group.discord_server else "なし")
-            repply += "■各種サービスのグループ：\n"
+            reply += "■各種サービスのグループ：\n"
             for service_group in group.service_groups.all():
                 reply += f"{service_group.name_in_service}@{service_group.kind}\n"
             if group.members.exists():
@@ -62,8 +62,8 @@ def check_group_command(command_source: CommandSource, target_group_name: str = 
                     [member.name for member in group.members.all()])
             else:
                 members_str = "なし"
-            repply += "■メンバー\n{}".format(members_str)
-            return repply, []
+            reply += "■メンバー\n{}".format(members_str)
+            return reply, []
         else:
             return None, ["グループ「{}」の閲覧権限がない。Master権限を持つユーザーか、グループの管理者と参加者のみ表示できる。".format(target_group_name)]
     except GroupNotFoundError:

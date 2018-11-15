@@ -19,7 +19,7 @@ def test_command(command_source: CommandSource, *params)->(str, [str]):
         reply += f'GroupID: {command_source.group_data.id}\n'
         reply += f'GroupName: {command_source.group_data.name}\n'
         for service_group in command_source.group_data.service_groups.all():
-            reply += f'ServiceGroup: {service_group.name_in_service}({service_group.id_in_service})@{service_group.kind}\n'
+            reply += f'ServiceGroup: {service_group.name_in_service}({service_group.id_in_service}@{service_group.kind})\n'
     else:
         reply += "なし"
     reply += '<コマンド引数>\n'
