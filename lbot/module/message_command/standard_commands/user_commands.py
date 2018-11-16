@@ -1,6 +1,6 @@
 '''ユーザー関連のメッセージコマンド'''
 
-from bot.models import User
+from bot.models import Group, Task, User
 
 from .... import database_utilities as db_util
 from ....authorities import UserAuthority
@@ -143,3 +143,69 @@ def change_user_authority_command(command_source: CommandSource, target_user_nam
         return "ユーザー「{}」の権限を「{}」から「{}」に変更したよ。".format(target_user_name, current_authority.name, target_authority.name), []
     except UserNotFoundError:
         return None, ["指定されたユーザー「{}」はいないよ。".format(target_user_name)]
+
+
+@StandardMessageCommandGroup.add_command("ユーザー統合", UserAuthority.Master)
+def merge_user(command_source: CommandSource, base_user_name: str, target_user_name: str):
+    '''ユーザーを統合します。
+    権限は高い方のユーザーに合わせられます。
+    権限以外の設定はベースユーザー(第一引数)のものが優先されます。
+    ■コマンド引数
+    1: ベースとなるユーザー
+    2: 対象となるユーザー'''
+    # 指定されたユーザーの検索
+    try:
+        base_user = User.objects.get(name=base_user_name)
+    except User.DoesNotExist:
+        return None, [f"指定されたベースユーザー「{base_user_name}」が見つからん。"]
+    try:
+        target_user = User.objects.get(name=target_user_name)
+    except User.DoesNotExist:
+        return None, [f"指定された対象ユーザー「{target_user_name}」が見つからない。"]
+    # グループ
+    save_target_list = []
+    update_target_query_set_list = []
+    for group in list(target_user.belonging_groups.all()):
+        update_target_query_set_list.append(group.members)
+        save_target_list.append(group)
+    for group in list(target_user.managing_groups.all()):
+        update_target_query_set_list.append(group.managers)
+        save_target_list.append(group)
+    # タスク
+    for task in list(target_user.managing_tasks.all()):
+        update_target_query_set_list.append(task.managers)
+        save_target_list.append(task)
+    for task in list(target_user.belonging_tasks.all()):
+        update_target_query_set_list.append(task.participants)
+        save_target_list.append(task)
+    for task in list(target_user.joinable_tasks.all()):
+        update_target_query_set_list.append(task.joinable_members)
+        save_target_list.append(task)
+    for task in list(target_user.absent_tasks.all()):
+        update_target_query_set_list.append(task.absent_members)
+        save_target_list.append(task)
+    # タスク参加確認ジョブ
+    for task_check_job in list(target_user.checked_task_join_check_job.all()):
+        update_target_query_set_list.append(task_check_job.checked_users)
+        save_target_list.append(task_check_job)
+    # 更新
+    for update_target_query_set in update_target_query_set_list:
+        update_target_query_set.remove(target_user)
+        if base_user not in update_target_query_set.all():
+            update_target_query_set.add(base_user)
+    # ユーザーの上書き
+    if UserAuthority[base_user.authority].value > UserAuthority[target_user.authority].value:
+        base_user.authority = target_user.authority
+        save_target_list.append(base_user)
+    # サービスユーザー
+    for service_user in list(target_user.service_users.all()):
+        service_user.belonging_user = base_user
+        save_target_list.append(service_user)
+    # 変更を保存
+    for save_target in save_target_list:
+        save_target.save()
+    # 対象ユーザーを削除
+    target_user.delete()
+
+    reply = f"ユーザー「{target_user_name}」をユーザー「{base_user_name}」に統合しました。"
+    return reply, []
